@@ -12,18 +12,31 @@ class WhatsApp {
     protected $timeout = 30;
     protected $baseUrl = "https://graph.whatsapp.com/v1/";
 
+    protected $provider;
     // constructor
     
-    public function __construct(array $config) {
-        $this->apiKey = $config['api_key'];
-        $this->phoneNumberId = $config['phone_number_id'];
-        $this->timeout = $config['timeout'] ?? 30;
-        $this->initializeClient();
+    public function __construct(array $config, $provider = 'default') {
+
+        $this->provider = $provider;
+
+        if( $this->provider == 'twilio') {
+            $this->accountSid = $config['account_sid'];
+            $this->authToken = $config['auth_token'];
+            $this->twilioPhoneNumber = $config['twilio_phone_number'];
+            $this->initializeTwilioClient();
+        } else{
+            $this->apiKey = $config['api_key'];
+            $this->phoneNumberId = $config['phone_number_id'];
+            $this->timeout = $config['timeout'] ?? 30;
+            $this->initializeDefaultClient();
+        }
     }
 
-    // init. GuzzleHttp Client
-    protected function initializeClient() {
-        $this->client = new Client([
+        
+
+    // init. GuzzleHttp Client - default provider
+    protected function initializeDefaultClient() {
+        $this->client = new  \GuzzleHttp\Client([
             'base_uri' => $this->baseUrl,
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->apiKey,

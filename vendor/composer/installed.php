@@ -5,7 +5,7 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'cc2282c7e7f8cf257b911c41fcc5b059a07fcbc5',
+        'reference' => '0dea9fad0f0ee8728ddc801cee713303cd0983eb',
         'name' => 'chat/whatsapp-integration',
         'dev' => true,
     ),
@@ -25,7 +25,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'cc2282c7e7f8cf257b911c41fcc5b059a07fcbc5',
+            'reference' => '0dea9fad0f0ee8728ddc801cee713303cd0983eb',
             'dev_requirement' => false,
         ),
         'cordoval/hamcrest-php' => array(
@@ -494,6 +494,15 @@
             'install_path' => __DIR__ . '/../theseer/tokenizer',
             'aliases' => array(),
             'reference' => '11336f6f84e16a720dae9d8e6ed5019efa85a0f9',
+            'dev_requirement' => false,
+        ),
+        'twilio/sdk' => array(
+            'pretty_version' => '8.3.4',
+            'version' => '8.3.4.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../twilio/sdk',
+            'aliases' => array(),
+            'reference' => '0c67059f472bf2a543b006c2bd7c07feb45ab465',
             'dev_requirement' => false,
         ),
         'webmozart/assert' => array(
