@@ -40,6 +40,20 @@ class WhatsAppTest extends TestCase
 
             $this->assertInstanceOf(WhatsApp::class, $whatsapp);
     }
+
+
+    public function uses_default_timeout(){
+        $whatsapp = new WhatsApp([
+            'api_key'=> 'test-api-key',
+            'phone_number_id'=>'test-phone-number-id'
+            ]);
+        $reflectionClass = new \ReflectionClass($whatsapp);
+        $timeout = $reflectionClass->getProperty('timeout');
+        $timeout->setAccessible(true);
+
+        $this->assertEquals(30, $timeout->getValue($whatsapp));
+        }
+
     public function sends_a_message_successfully()
     {
         // successful response
