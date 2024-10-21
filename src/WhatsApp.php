@@ -69,6 +69,38 @@ class WhatsApp{
 
     }
 
+    // handle incoming webhook
+
+    public function handleWebhook($payload){
+        try{
+            if(!isset($payload['entry'][0]['changes'][0]['value']['messages'])){
+                return $payload;
+        }
+
+        $messages = $payload['entry'][0]['changes'][0]['value']['messages'];
+        return[
+            'status' =>'success',
+            'message'=> array_map(function ($message){
+                return[
+                    'message_id' =>$message['id'],
+                    'from'=>$message['from'],
+                    'timestamp'=> $message['timestamp'],
+                    'text'=> $message['text']['body'] ?? null,
+                    'type' =>$message['type']
+                ];
+
+            },$messages),
+        ];
+    } catch(\Exception $e){
+        throw new WhatsAppException(
+            'Failed to process webhook:'. $e->getMessage(),
+            $e->getCode(),
+        );
+    }
+}
+
+
+
 
 };
 
