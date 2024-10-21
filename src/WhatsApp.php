@@ -32,7 +32,7 @@ class WhatsApp{
                 'Content-Type' => 'application/json',
             ],
 
-            'timeout' =>config('whatsapp.timeout',30)
+            'timeout' =>$this->timeout,
             ]);
     }
 
@@ -41,9 +41,9 @@ class WhatsApp{
 
     public function sendMessage($to, $message){
         try{
-            $phoneId = config('whatsapp.phone_number_id');
+    
 
-            $response = $this->client->post('{$phoneId}/messages', [
+            $response = $this->client->post($this->phoneNumberId .'/messages', [
                 'json'=> [
                     'messaging_product' => 'whatsapp',
                     'to' => $this->formatPhoneNumber($to),
@@ -51,7 +51,7 @@ class WhatsApp{
                     'text' => [
                         'body' => $message
 
-                    ]
+                    ],
             ]
             ]);
 
