@@ -1,0 +1,23 @@
+{
+    "name": "chat/whatsapp-integration",
+    "description": "A package for integrating WhatsApp features into Laravel 5.8 applications.",
+    "type": "library",
+    "require": {
+        "illuminate/support": "^5.8",
+        "guzzlehttp/guzzle": "^6.3",
+        "phpunit/phpunit": "^7.5"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Chat\\WhatsappIntegration\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Agnes",
+            "email": "agypeter97@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}
