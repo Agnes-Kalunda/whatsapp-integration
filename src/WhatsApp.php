@@ -64,7 +64,10 @@ class WhatsApp{
 
     }
 
+    protected function formatPhoneNumber($number){
+        return preg_replace('/[^0-9]/','', $number);
 
+    }
 
 
 };
