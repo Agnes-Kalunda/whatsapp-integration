@@ -74,7 +74,7 @@ class WhatsApp{
     public function handleWebhook($payload){
         try{
             if(!isset($payload['entry'][0]['changes'][0]['value']['messages'])){
-                return $payload;
+                return ['status' => 'no_messages'];
         }
 
         $messages = $payload['entry'][0]['changes'][0]['value']['messages'];
