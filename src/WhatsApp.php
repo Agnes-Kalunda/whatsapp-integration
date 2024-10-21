@@ -32,9 +32,39 @@ class WhatsApp{
             ]);
     }
 
-    
+
+    // send whatsapp msg
+
+    public function sendMessage($to $message){
+        try{
+            $phoneId = config('whatsapp.phone_number_id');
+
+            $response = $this->client->post('{$phoneId}/messages', [
+                'json'=> [
+                    'messaging_product' => 'whatsapp',
+                    'to' => $this->formatPhoneNumber($to),
+                    'type' => 'text',
+                    'text' => [
+                        'body' => $message
+
+                    ]
+            ]
+            ]);
+
+            return json_decode($response->getBody(), true);
+        }
+        catch(\Exception $e){
+            throw new WhatsAppException(
+                'Failed to send WhatsApp message:'. $e->getMessage(),
+                $e->getCode(),
+            );
 
     }
+
+    }
+
+
+    
 
 };
 
