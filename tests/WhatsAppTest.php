@@ -31,7 +31,16 @@ class WhatsAppTest extends TestCase
     }
 
     
-    public function it_sends_a_message_successfully()
+
+    public function proper_config_init(){
+        $whatsapp = new WhatsApp([
+            'api_key' => 'test-key',
+            'phone_number_id'=>'test-phone-number-id'
+            ]);
+
+            $this->assertInstanceOf(WhatsApp::class, $whatsapp);
+    }
+    public function sends_a_message_successfully()
     {
         // successful response
         $this->mockClient->shouldReceive('post')
