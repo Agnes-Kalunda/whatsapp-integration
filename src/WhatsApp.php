@@ -2,6 +2,7 @@
 
 namespace Chat\WhatsappIntegration;
 
+use Chat\WhatsappIntegration\Exceptions\WhatsAppException;
 use GuzzleHttp\Client;
 
 class WhatsApp{
@@ -64,7 +65,7 @@ class WhatsApp{
     }
 
 
-    
+
 
 };
 
