@@ -9,10 +9,11 @@ class WhatsApp {
     protected $client;
     protected $apiKey;
     protected $phoneNumberId;
-    protected $timeout;
+    protected $timeout = 30;
     protected $baseUrl = "https://graph.whatsapp.com/v1/";
 
     // constructor
+    
     public function __construct(array $config) {
         $this->apiKey = $config['api_key'];
         $this->phoneNumberId = $config['phone_number_id'];
