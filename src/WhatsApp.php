@@ -76,7 +76,8 @@ class WhatsApp{
             if(!isset($payload['entry'][0]['changes'][0]['value']['messages'])){
                 return ['status' => 'no_messages'];
         }
-
+        
+        // iterate over msgs and format into a usable structure
         $messages = $payload['entry'][0]['changes'][0]['value']['messages'];
         return[
             'status' =>'success',
@@ -98,6 +99,14 @@ class WhatsApp{
         );
     }
 }
+
+    // set client
+
+    public function setClient($client){
+        $this->client = $client;
+
+    }
+
 
 
 
