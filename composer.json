@@ -19,5 +19,8 @@
             "email": "agypeter97@gmail.com"
         }
     ],
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "require-dev": {
+        "mockery/mockery": "^1.3"
+    }
 }

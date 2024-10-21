@@ -1,11 +1,11 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
+        'pretty_version' => 'dev-master',
+        'version' => 'dev-master',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => null,
+        'reference' => 'cc2282c7e7f8cf257b911c41fcc5b059a07fcbc5',
         'name' => 'chat/whatsapp-integration',
         'dev' => true,
     ),
@@ -20,13 +20,25 @@
             'dev_requirement' => false,
         ),
         'chat/whatsapp-integration' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => null,
+            'reference' => 'cc2282c7e7f8cf257b911c41fcc5b059a07fcbc5',
             'dev_requirement' => false,
+        ),
+        'cordoval/hamcrest-php' => array(
+            'dev_requirement' => true,
+            'replaced' => array(
+                0 => '*',
+            ),
+        ),
+        'davedevelopment/hamcrest-php' => array(
+            'dev_requirement' => true,
+            'replaced' => array(
+                0 => '*',
+            ),
         ),
         'doctrine/inflector' => array(
             'pretty_version' => '1.4.4',
@@ -73,6 +85,15 @@
             'reference' => 'e4490cabc77465aaee90b20cfc9a770f8c04be6b',
             'dev_requirement' => false,
         ),
+        'hamcrest/hamcrest-php' => array(
+            'pretty_version' => 'v2.0.1',
+            'version' => '2.0.1.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../hamcrest/hamcrest-php',
+            'aliases' => array(),
+            'reference' => '8c3d0a3f6af734494ad8f6fbbee0ba92422859f3',
+            'dev_requirement' => true,
+        ),
         'illuminate/contracts' => array(
             'pretty_version' => 'v5.8.36',
             'version' => '5.8.36.0',
@@ -90,6 +111,21 @@
             'aliases' => array(),
             'reference' => 'df4af6a32908f1d89d74348624b57e3233eea247',
             'dev_requirement' => false,
+        ),
+        'kodova/hamcrest-php' => array(
+            'dev_requirement' => true,
+            'replaced' => array(
+                0 => '*',
+            ),
+        ),
+        'mockery/mockery' => array(
+            'pretty_version' => '1.3.6',
+            'version' => '1.3.6.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../mockery/mockery',
+            'aliases' => array(),
+            'reference' => 'dc206df4fa314a50bbb81cf72239a305c5bbd5c0',
+            'dev_requirement' => true,
         ),
         'myclabs/deep-copy' => array(
             'pretty_version' => '1.12.0',

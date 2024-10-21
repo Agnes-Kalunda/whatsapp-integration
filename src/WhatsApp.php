@@ -8,13 +8,16 @@ use GuzzleHttp\Client;
 class WhatsApp{
     protected $client;
     protected $apiKey;
-
-    protected $baseUrl ="";
+    protected $phoneNumberId;
+    protected $timeout;
+    protected $baseUrl ="https://graph.whatsapp.com/v1/";
 
 
     // constructor
-    public function __construct($apiKey = null){
-        $this->apiKey = $apiKey ?? config('whatsapp.api_key');
+    public function __construct(array $config) {
+        $this->apiKey = $config['api_key'];
+        $this->phoneNumberId = $config['phone_number_id'];
+        $this->timeout = $config['timeout'] ?? 30; // Default to 30 seconds if not set
         $this->initializeClient();
     }
 
@@ -36,7 +39,7 @@ class WhatsApp{
 
     // send whatsapp msg
 
-    public function sendMessage($to $message){
+    public function sendMessage($to, $message){
         try{
             $phoneId = config('whatsapp.phone_number_id');
 
