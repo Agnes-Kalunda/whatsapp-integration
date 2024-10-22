@@ -5,7 +5,7 @@ namespace Chat\WhatsappIntegration;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 
-class WhatsAppServiceProvider extends ServiceProvider implements DeferrableProvider
+class WhatsAppIntegrationServiceProvider extends ServiceProvider implements DeferrableProvider
 {
     public function register()
     {

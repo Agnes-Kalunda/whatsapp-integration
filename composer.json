@@ -15,6 +15,13 @@
             "Chat\\WhatsappIntegration\\": "src/"
         }
     },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Chat\\WhatsappIntegration\\WhatsAppIntegrationServiceProvider"
+            ]
+        }
+    },
     "authors": [
         {
             "name": "Agnes",
