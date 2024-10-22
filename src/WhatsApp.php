@@ -47,7 +47,7 @@ class WhatsApp {
 
     // send whatsapp msg -twilio
     public function sendMessage($to, $message) {
-        if (!$this->isValidPhoneNymber($to)) {
+        if (!$this->isValidPhoneNumber($to)) {
             throw new WhatsAppException('Invalid phone number format.');
         }
 
@@ -81,7 +81,7 @@ class WhatsApp {
         
     
 
-    protected function isValidPhoneNymber($number) {
+    protected function isValidPhoneNumber($number) {
         return preg_match('/^\+\d{1,3}\d{1,14}(\s\d{1,13})?$/', $number);
     }
     protected function formatPhoneNumber($number) {

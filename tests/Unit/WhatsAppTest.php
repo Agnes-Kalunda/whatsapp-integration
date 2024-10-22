@@ -167,6 +167,17 @@ class WhatsAppTest extends TestCase
         $this->whatsapp->sendMessage('invalid-phone-number', 'Test message');
     }
 
+    /**
+     * @test
+     */
+
+    public function it_throws_exception_if_message_is_empty(){
+        $this->expectException(WhatsAppException::class);
+        $this->expectExceptionMessage('Message cannot be empty');
+
+        $this->whatsapp->sendMessage('+1234567890','');
+    }
+
     // cleans up after tests
     public function tearDown(): void
     {
