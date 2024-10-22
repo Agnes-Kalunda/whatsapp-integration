@@ -135,7 +135,7 @@ class WhatsAppIntegrationTest extends TestCase
         $this->assertEquals('Complete webhook test message', $result['message'][0]['text']);
     }
 
-  
+
 
     /**
      * @test
@@ -155,6 +155,15 @@ class WhatsAppIntegrationTest extends TestCase
             $this->assertArrayHasKey('text', $result['message'][0]);
             $this->assertEquals($payload['Body'], $result['message'][0]['text']);
         }
+    }
+
+       /**
+     * @test
+     */
+    public function test_handles_empty_webhook_payload()
+    {
+        $result = $this->whatsapp->handleWebhook([]);
+        $this->assertEquals('no_messages', $result['status']);
     }
 
     protected function tearDown(): void
