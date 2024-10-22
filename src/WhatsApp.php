@@ -114,6 +114,7 @@ class WhatsApp {
             );
         }
     }
+    
     // set client
     public function setClient($client) {
         $this->client = $client;

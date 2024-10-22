@@ -24,11 +24,11 @@ class WhatsAppTest extends TestCase
         $this->mockClient = Mockery::mock(Client::class);
         $this->mockClient->messages = $this->mockMessages;
 
-         //init. WhatsApp class with config array
+        // init. WhatsApp class with config array
         $this->whatsapp = new WhatsApp([
             'account_sid' => 'test-account-sid',
             'auth_token' => 'test-auth-token',
-            'from_number' =>'+1234567890',
+            'from_number' => '+1234567890',
             'timeout' => 30
         ]);
 
@@ -38,31 +38,29 @@ class WhatsAppTest extends TestCase
     /**
      * @test
      */
+    public function it_sends_a_message_successfully()
+    {
+        $mockResponse = Mockery::mock(MessageInstance::class);
+        $mockResponse->sid = 'TEST123';
+        $mockResponse->to = 'whatsapp:+1234567890';
+        $mockResponse->from = 'whatsapp:+0987654321';
 
-     public function it_sends_a_message_successfully()
-     {
-         $mockResponse = Mockery::mock(MessageInstance::class);
-         $mockResponse->sid = 'TEST123';
-         $mockResponse->to = 'whatsapp:+1234567890';
-         $mockResponse->from = 'whatsapp:+0987654321';
- 
-         $this->mockMessages->shouldReceive('create')
-             ->once()
-             ->with(
-                 'whatsapp:1234567890',
-                 [
-                     'from' => 'whatsapp:+1234567890',
-                     'body' => 'Test message'
-                 ]
-             )
-             ->andReturn($mockResponse);
- 
-         $response = $this->whatsapp->sendMessage('+1234567890', 'Test message');
- 
-         $this->assertEquals('success', $response['status']);
-         $this->assertEquals('TEST123', $response['message_sid']);
-     }
- 
+        $this->mockMessages->shouldReceive('create')
+            ->once()
+            ->with(
+                'whatsapp:1234567890',
+                [
+                    'from' => 'whatsapp:+1234567890',
+                    'body' => 'Test message'
+                ]
+            )
+            ->andReturn($mockResponse);
+
+        $response = $this->whatsapp->sendMessage('+1234567890', 'Test message');
+
+        $this->assertEquals('success', $response['status']);
+        $this->assertEquals('TEST123', $response['message_sid']);
+    }
 
     /**
      * @test
@@ -74,7 +72,6 @@ class WhatsAppTest extends TestCase
             ->once()
             ->andThrow(new \Exception('API error', 500));
 
-    
         $this->expectException(WhatsAppException::class);
         $this->expectExceptionMessage('Failed to send WhatsApp message: API error');
 
@@ -84,7 +81,8 @@ class WhatsAppTest extends TestCase
     /**
      * @test
      */
-    public function it_uses_default_timeout(){
+    public function it_uses_default_timeout()
+    {
         $whatsapp = new WhatsApp([
             'account_sid' => 'test-account-sid',
             'auth_token' => 'test-auth-token',
@@ -96,12 +94,10 @@ class WhatsAppTest extends TestCase
         $timeoutProperty = $reflectionClass->getProperty('timeout');
         $timeoutProperty->setAccessible(true);
 
-    
         $this->assertEquals(30, $timeoutProperty->getValue($whatsapp));
-    
     }
 
-     /**
+    /**
      * @test
      */
     public function it_handles_webhook_messages_successfully()
@@ -119,8 +115,7 @@ class WhatsAppTest extends TestCase
         $this->assertEquals('Hello!', $result['message'][0]['text']);
     }
 
-
-     /**
+    /**
      * @test
      */
     public function it_returns_no_messages_when_webhook_is_empty()
@@ -135,35 +130,44 @@ class WhatsAppTest extends TestCase
     /**
      * @test
      */
-
-     public function it_validates_required_config(){
+    public function it_validates_required_config()
+    {
         $this->expectException(WhatsAppException::class);
         $this->expectExceptionMessage('Missing required configuration: account_sid');
 
         new WhatsApp([
-            'auth_token'=> 'test-auth-token',
+            'auth_token' => 'test-auth-token',
             'from_number' => '+1234567890'
         ]);
-     }
-    
+    }
 
-      /**
+    /**
      * @test
      */
     public function it_throws_exception_if_quota_is_exceeded()
     {
-    $this->mockMessages->shouldReceive('create')
-        ->once()
-        ->andThrow(new \Twilio\Exceptions\RestException('Quota exceeded', 429, 429));
+        $this->mockMessages->shouldReceive('create')
+            ->once()
+            ->andThrow(new \Twilio\Exceptions\RestException('Quota exceeded', 429, 429));
 
-    $this->expectException(WhatsAppException::class);
-    $this->expectExceptionMessage('Quota exceeded: Too many requests. Please try again later.');
+        $this->expectException(WhatsAppException::class);
+        $this->expectExceptionMessage('Quota exceeded: Too many requests. Please try again later.');
 
-    $this->whatsapp->sendMessage('+1234567890', 'Test message');
-}
+        $this->whatsapp->sendMessage('+1234567890', 'Test message');
+    }
 
+    /**
+     * @test
+     */
+    public function it_throws_exception_if_phone_number_is_invalid()
+    {
+        $this->expectException(WhatsAppException::class);
+        $this->expectExceptionMessage('Invalid phone number format.');
 
-    //  cleans up after tests
+        $this->whatsapp->sendMessage('invalid-phone-number', 'Test message');
+    }
+
+    // cleans up after tests
     public function tearDown(): void
     {
         Mockery::close();
