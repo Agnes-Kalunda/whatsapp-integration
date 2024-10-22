@@ -62,6 +62,22 @@ class WhatsAppIntegrationTest extends TestCase
         $this->whatsapp->sendMessage('12345', 'Test message');
     }
 
+
+     /**
+     * @test
+     */
+    public function test_sends_message_with_maximum_length()
+    {
+        $message = str_repeat('a', 1600); // twilio's maximum message length
+        
+        try {
+            $response = $this->whatsapp->sendMessage($this->validPhoneNumber, $message);
+            $this->assertEquals('success', $response['status']);
+        } catch (WhatsAppException $e) {
+            $this->fail('Failed to send maximum length message: ' . $e->getMessage());
+        }
+    }
+
      /**
      * @test
      */
