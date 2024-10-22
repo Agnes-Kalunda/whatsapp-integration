@@ -62,13 +62,20 @@ class WhatsApp {
                 'to' => $response->to,
                 'from' => $response->from
             ];
-        } catch (\Exception $e) {
-            throw new WhatsAppException(
-                'Failed to send WhatsApp message: ' . $e->getMessage(),
-                $e->getCode()
-            );
+        } catch (\Twilio\Exceptions\RestException $e) {
+            if ($e->getStatusCode() === 401) {
+                throw new WhatsAppException('Invalid API Key or Auth Token: ' . $e->getMessage(), $e->getCode());
+            } elseif ($e->getStatusCode() === 429) {
+                throw new WhatsAppException('Quota exceeded: ' . $e->getMessage(), $e->getCode());
+            } elseif ($e->getStatusCode() === 400) {
+                throw new WhatsAppException('Invalid request: ' . $e->getMessage(), $e->getCode());
+            } else {
+                throw new WhatsAppException('Failed to send WhatsApp message: ' . $e->getMessage(), $e->getCode());
+            }
         }
     }
+        
+    
 
     protected function formatPhoneNumber($number) {
         return preg_replace('/[^0-9]/', '', $number);
