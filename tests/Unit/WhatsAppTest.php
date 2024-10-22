@@ -146,6 +146,23 @@ class WhatsAppTest extends TestCase
         ]);
      }
     
+
+      /**
+     * @test
+     */
+    public function it_throws_exception_if_quota_is_exceeded()
+    {
+    $this->mockMessages->shouldReceive('create')
+        ->once()
+        ->andThrow(new \Twilio\Exceptions\RestException('Quota exceeded', 429, 429));
+
+    $this->expectException(WhatsAppException::class);
+    $this->expectExceptionMessage('Quota exceeded: Too many requests. Please try again later.');
+
+    $this->whatsapp->sendMessage('+1234567890', 'Test message');
+}
+
+
     //  cleans up after tests
     public function tearDown(): void
     {
