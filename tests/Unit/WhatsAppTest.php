@@ -70,12 +70,12 @@ class WhatsAppTest extends TestCase
     public function it_throws_exception_if_sending_message_fails()
     {
         // failed API response
-        $this->mockClient->shouldReceive('post')
+        $this->mockClient->shouldReceive('create')
             ->once()
             ->andThrow(new \Exception('API error', 500));
 
     
-        $this->expectException(\Chat\WhatsappIntegration\Exceptions\WhatsAppException::class);
+        $this->expectException(WhatsAppException::class);
         $this->expectExceptionMessage('Failed to send WhatsApp message: API error');
 
         $this->whatsapp->sendMessage('+1234567890', 'Test message');
