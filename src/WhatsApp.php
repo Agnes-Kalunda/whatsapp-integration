@@ -55,7 +55,7 @@ class WhatsApp {
                     'body' => $message
                 ]
             );
-
+    
             return [
                 'status' => 'success',
                 'message_sid' => $response->sid,
@@ -63,15 +63,9 @@ class WhatsApp {
                 'from' => $response->from
             ];
         } catch (\Twilio\Exceptions\RestException $e) {
-            if ($e->getStatusCode() === 401) {
-                throw new WhatsAppException('Invalid API Key or Auth Token: ' . $e->getMessage(), $e->getCode());
-            } elseif ($e->getStatusCode() === 429) {
-                throw new WhatsAppException('Quota exceeded: ' . $e->getMessage(), $e->getCode());
-            } elseif ($e->getStatusCode() === 400) {
-                throw new WhatsAppException('Invalid request: ' . $e->getMessage(), $e->getCode());
-            } else {
-                throw new WhatsAppException('Failed to send WhatsApp message: ' . $e->getMessage(), $e->getCode());
-            }
+            throw new WhatsAppException('Failed to send WhatsApp message: ' . $e->getMessage(), $e->getCode());
+        } catch (\Exception $e) {
+            throw new WhatsAppException('Failed to send WhatsApp message: ' . $e->getMessage(), $e->getCode());
         }
     }
         

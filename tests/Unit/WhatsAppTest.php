@@ -70,7 +70,7 @@ class WhatsAppTest extends TestCase
     public function it_throws_exception_if_sending_message_fails()
     {
         // failed API response
-        $this->mockClient->shouldReceive('create')
+        $this->mockMessages->shouldReceive('create')
             ->once()
             ->andThrow(new \Exception('API error', 500));
 
@@ -146,7 +146,7 @@ class WhatsAppTest extends TestCase
         ]);
      }
     
-    //  clean up after tests
+    //  cleans up after tests
     public function tearDown(): void
     {
         Mockery::close();
