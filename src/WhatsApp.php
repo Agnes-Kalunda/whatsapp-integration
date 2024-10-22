@@ -11,7 +11,7 @@ class WhatsApp {
     protected $fromNumber;
     protected $apiKey;
     // protected $phoneNumberId;
-    // protected $timeout = 30;
+    protected $timeout = 30;
     // protected $baseUrl = "https://graph.whatsapp.com/v1/";
 
     // constructor
@@ -45,28 +45,31 @@ class WhatsApp {
         }
     }
 
-    // send whatsapp msg
+    // send whatsapp msg -twilio
     public function sendMessage($to, $message) {
         try {
-            $response = $this->client->post($this->phoneNumberId .'/messages', [
-                'json' => [
-                    'messaging_product' => 'whatsapp',
-                    'to' => $this->formatPhoneNumber($to),
-                    'type' => 'text',
-                    'text' => [
-                        'body' => $message
-                    ]
+            $response = $this->client->messages->create(
+                'whatsapp:' . $this->formatPhoneNumber($to),
+                [
+                    'from' => 'whatsapp:' . $this->fromNumber,
+                    'body' => $message
                 ]
-            ]);
+            );
 
-            return json_decode($response->getBody(), true);
-        } catch(\Exception $e) {
+            return [
+                'status' => 'success',
+                'message_sid' => $response->sid,
+                'to' => $response->to,
+                'from' => $response->from
+            ];
+        } catch (\Exception $e) {
             throw new WhatsAppException(
-                'Failed to send WhatsApp message: ' . $e->getMessage(), // Added space after colon
+                'Failed to send WhatsApp message: ' . $e->getMessage(),
                 $e->getCode()
             );
         }
     }
+
     protected function formatPhoneNumber($number) {
         return preg_replace('/[^0-9]/', '', $number);
     }
@@ -74,32 +77,29 @@ class WhatsApp {
     // handle incoming webhook
     public function handleWebhook($payload) {
         try {
-            if(!isset($payload['entry'][0]['changes'][0]['value']['messages'])) {
+            if (!isset($payload['Body'])) {
                 return ['status' => 'no_messages'];
             }
 
-            // iterate over msgs and format into a usable structure
-            $messages = $payload['entry'][0]['changes'][0]['value']['messages'];
             return [
                 'status' => 'success',
-                'message' => array_map(function ($message) {
-                    return [
-                        'message_id' => $message['id'],
-                        'from' => $message['from'],
-                        'timestamp' => $message['timestamp'],
-                        'text' => $message['text']['body'] ?? null,
-                        'type' => $message['type']
-                    ];
-                }, $messages)
+                'message' => [
+                    [
+                        'message_id' => $payload['MessageSid'] ?? null,
+                        'from' => str_replace('whatsapp:', '', $payload['From'] ?? ''),
+                        'timestamp' => time(),
+                        'text' => $payload['Body'],
+                        'type' => 'text'
+                    ]
+                ]
             ];
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             throw new WhatsAppException(
-                'Failed to process webhook:'. $e->getMessage(),
+                'Failed to process webhook: ' . $e->getMessage(),
                 $e->getCode()
             );
         }
     }
-
     // set client
     public function setClient($client) {
         $this->client = $client;
