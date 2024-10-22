@@ -3,40 +3,39 @@
 namespace Chat\WhatsappIntegration;
 
 use Chat\WhatsappIntegration\Exceptions\WhatsAppException;
-use GuzzleHttp\Client;
+// use GuzzleHttp\Client;
+use Twilio\Rest\Client;
 
 class WhatsApp {
     protected $client;
+    protected $fromNumber;
     protected $apiKey;
-    protected $phoneNumberId;
-    protected $timeout = 30;
-    protected $baseUrl = "https://graph.whatsapp.com/v1/";
+    // protected $phoneNumberId;
+    // protected $timeout = 30;
+    // protected $baseUrl = "https://graph.whatsapp.com/v1/";
 
-    protected $provider;
     // constructor
     
-    public function __construct(array $config, $provider = 'default') {
+    public function __construct(array $config) {
+        $this->validateConfig($config);
+        $this->fromNumber = $config['from_number'];
+        $this->timeout = $config['timeout'] ?? 30;
+        $this->initializeClient($config['account_sid'], $config['auth_token']);
+    }
 
-        $this->provider = $provider;
-
-        if( $this->provider == 'twilio') {
-            $this->accountSid = $config['account_sid'];
-            $this->authToken = $config['auth_token'];
-            $this->twilioPhoneNumber = $config['twilio_phone_number'];
-            $this->initializeTwilioClient();
-        } else{
-            $this->apiKey = $config['api_key'];
-            $this->phoneNumberId = $config['phone_number_id'];
-            $this->timeout = $config['timeout'] ?? 30;
-            $this->initializeDefaultClient();
+    protected function validateConfig(array $config) {
+        $required = ['account_sid', 'auth_token', 'from_number'];
+        foreach ($required as $field) {
+            if (!isset($config[$field])) {
+                throw new WhatsAppException("Missing required configuration: {$field}");
+            }
         }
     }
 
-        
 
-    // init. GuzzleHttp Client - default provider
-    protected function initializeDefaultClient() {
-        $this->client = new  \GuzzleHttp\Client([
+    // init. GuzzleHttp Client
+    protected function initializeClient() {
+        $this->client = new Client([
             'base_uri' => $this->baseUrl,
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->apiKey,
@@ -46,23 +45,8 @@ class WhatsApp {
         ]);
     }
 
-    // init. Twilio Client
-    protected function initializeTwilioClient() {
-        $this->client = new TwilioClient($this->accountSid, $this->authToken);
-
-    }
-
-    // send message - default provider
-    public function sendMessage($to, $message){
-        if($this->provider === 'twilio'){
-            return $this->sendMessage($to, $message);
-
-        }
-        return $this->sendMessage($to, $message);
-    }
-
-    // send whatsapp msg - Twilio API
-    public function sendTwilioMessage($to, $message) {
+    // send whatsapp msg
+    public function sendMessage($to, $message) {
         try {
             $response = $this->client->post($this->phoneNumberId .'/messages', [
                 'json' => [
