@@ -33,16 +33,16 @@ class WhatsApp {
     }
 
 
-    // init. GuzzleHttp Client
-    protected function initializeClient() {
-        $this->client = new Client([
-            'base_uri' => $this->baseUrl,
-            'headers' => [
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type' => 'application/json',
-            ],
-            'timeout' => $this->timeout
-        ]);
+    // init. Twilio Client
+    protected function initializeClient($accountSid, $authToken) {
+        try {
+            $this->client = new Client($accountSid, $authToken);
+        } catch (\Exception $e) {
+            throw new WhatsAppException(
+                'Failed to initialize Twilio client: ' . $e->getMessage(),
+                $e->getCode()
+            );
+        }
     }
 
     // send whatsapp msg
