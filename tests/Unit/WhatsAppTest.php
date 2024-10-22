@@ -3,8 +3,10 @@
 namespace Tests\Unit;
 
 use Chat\WhatsappIntegration\WhatsApp;
-use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Response;
+use Chat\WhatsappIntegration\Exceptions\WhatsAppException;
+use Twilio\Rest\Client;
+use Twilio\Rest\Api\V2010\Account\MessageList;
+use Twilio\Rest\Api\V2010\Account\MessageInstance;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 
@@ -12,17 +14,21 @@ class WhatsAppTest extends TestCase
 {
     protected $whatsapp;
     protected $mockClient;
+    protected $mockMessages;
 
     public function setUp(): void
     {
         parent::setUp();
 
+        $this->mockMessages = Mockery::mock(MessageList::class);
         $this->mockClient = Mockery::mock(Client::class);
+        $this->mockClient->messages = $this->mockMessages;
 
          //init. WhatsApp class with config array
         $this->whatsapp = new WhatsApp([
-            'api_key' => 'test-api-key',
-            'phone_number_id' => 'test-phone-number-id',
+            'account_sid' => 'test-account-sid',
+            'auth_token' => 'test-auth-token',
+            'from_number' =>'+1234567890',
             'timeout' => 30
         ]);
 
