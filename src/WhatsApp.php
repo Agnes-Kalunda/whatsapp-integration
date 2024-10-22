@@ -63,6 +63,9 @@ class WhatsApp {
                 'from' => $response->from
             ];
         } catch (\Twilio\Exceptions\RestException $e) {
+            if($e->getStatusCode() == 429) {
+                throw new WhatsAppException('Quota exceeded: Too many requests. Please try again later.', $e->getCode());
+            }
             throw new WhatsAppException('Failed to send WhatsApp message: ' . $e->getMessage(), $e->getCode());
         } catch (\Exception $e) {
             throw new WhatsAppException('Failed to send WhatsApp message: ' . $e->getMessage(), $e->getCode());
