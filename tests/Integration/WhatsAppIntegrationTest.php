@@ -167,8 +167,7 @@ class WhatsAppIntegrationTest extends TestCase
         $this->assertEquals('Complete webhook test message', $result['message'][0]['text']);
     }
 
-
-
+    
     /**
      * @test
      */
@@ -196,6 +195,29 @@ class WhatsAppIntegrationTest extends TestCase
     {
         $result = $this->whatsapp->handleWebhook([]);
         $this->assertEquals('no_messages', $result['status']);
+    }
+
+      /**
+     * @test
+     */
+    // whitespace handling in msgs
+    public function test_handles_whitespace_in_message()
+    {
+        $messages = [
+            "  Padded with spaces  ",
+            "\nNew lines\n\n",
+            "\tTabbed\tContent\t",
+            " Mixed   Spacing   Content \n\t"
+        ];
+
+        foreach ($messages as $message) {
+            try {
+                $response = $this->whatsapp->sendMessage($this->validPhoneNumber, $message);
+                $this->assertEquals('success', $response['status']);
+            } catch (WhatsAppException $e) {
+                $this->fail('Failed to handle whitespace in message: ' . $e->getMessage());
+            }
+        }
     }
 
     protected function tearDown(): void
