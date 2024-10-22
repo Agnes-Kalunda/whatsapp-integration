@@ -9,7 +9,7 @@ use Twilio\Rest\Client;
 class WhatsApp {
     protected $client;
     protected $fromNumber;
-    protected $apiKey;
+    // protected $apiKey;
     // protected $phoneNumberId;
     protected $timeout = 30;
     // protected $baseUrl = "https://graph.whatsapp.com/v1/";
@@ -82,8 +82,20 @@ class WhatsApp {
     
 
     protected function isValidPhoneNumber($number) {
-        return preg_match('/^\+\d{1,3}\d{1,14}(\s\d{1,13})?$/', $number);
+
+        if (!preg_match('/^\+\d{10,15}$/', $number)) {
+            return false;
+        }
+
+        
+        $digitsOnly = $this->formatPhoneNumber($number);
+        if (strlen($digitsOnly) < 10) {
+            return false;
+        }
+
+        return true;
     }
+
     protected function formatPhoneNumber($number) {
         return preg_replace('/[^0-9]/', '', $number);
     }
