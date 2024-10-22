@@ -6,7 +6,8 @@
         "illuminate/support": "^5.8",
         "guzzlehttp/guzzle": "^6.3",
         "phpunit/phpunit": "^7.5",
-        "twilio/sdk": "^8.3"
+        "twilio/sdk": "^8.3",
+        "vlucas/phpdotenv": "^3.3"
     },
     "license": "MIT",
     "autoload": {
