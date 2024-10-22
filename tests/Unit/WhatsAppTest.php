@@ -86,8 +86,9 @@ class WhatsAppTest extends TestCase
      */
     public function it_uses_default_timeout(){
         $whatsapp = new WhatsApp([
-            'api_key' => 'test-api-key',
-            'phone_number_id' => 'test-phone-number-id'
+            'account_sid' => 'test-account-sid',
+            'auth_token' => 'test-auth-token',
+            'from_number' => '+1234567890'
         ]);
 
         // use reflection to access private 'timeout' property
