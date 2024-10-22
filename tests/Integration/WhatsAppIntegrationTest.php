@@ -62,6 +62,22 @@ class WhatsAppIntegrationTest extends TestCase
         $this->whatsapp->sendMessage('12345', 'Test message');
     }
 
+     /**
+     * @test
+     */
+    public function test_sends_message_with_special_characters()
+    {
+        $message = 'Test message with special chars: áéíóú ñ € § @ # $ % & *';
+        
+        try {
+            $response = $this->whatsapp->sendMessage($this->validPhoneNumber, $message);
+            $this->assertEquals('success', $response['status']);
+            $this->assertArrayHasKey('message_sid', $response);
+        } catch (WhatsAppException $e) {
+            $this->fail('Failed to send message with special characters: ' . $e->getMessage());
+        }
+    }
+
     /**
      * @test
      */
