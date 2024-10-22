@@ -46,6 +46,12 @@ class WhatsApp {
         ]);
     }
 
+    // init. Twilio Client
+    protected function initializeTwilioClient() {
+        $this->client = new TwilioClient($this->accountSid);
+
+    }
+
     // send whatsapp msg
     public function sendMessage($to, $message) {
         try {
