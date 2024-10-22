@@ -39,28 +39,30 @@ class WhatsAppTest extends TestCase
      * @test
      */
 
-    public function it_sends_a_message_successfully()
-    {
-        // successful response
-        $this->mockClient->shouldReceive('post')
-            ->once()
-            ->with('test-phone-number-id/messages', [
-                'json' => [
-                    'messaging_product' => 'whatsapp',
-                    'to' => '1234567890',
-                    'type' => 'text',
-                    'text' => [
-                        'body' => 'Test message'
-                    ],
-                ]
-            ])
-            ->andReturn(new Response(200, [], json_encode(['status' => 'success'])));
-
-        $response = $this->whatsapp->sendMessage('+1234567890', 'Test message');
-
-        // assert response 
-        $this->assertEquals('success', $response['status']);
-    }
+     public function it_sends_a_message_successfully()
+     {
+         $mockResponse = Mockery::mock(MessageInstance::class);
+         $mockResponse->sid = 'TEST123';
+         $mockResponse->to = 'whatsapp:+1234567890';
+         $mockResponse->from = 'whatsapp:+0987654321';
+ 
+         $this->mockMessages->shouldReceive('create')
+             ->once()
+             ->with(
+                 'whatsapp:1234567890',
+                 [
+                     'from' => 'whatsapp:+1234567890',
+                     'body' => 'Test message'
+                 ]
+             )
+             ->andReturn($mockResponse);
+ 
+         $response = $this->whatsapp->sendMessage('+1234567890', 'Test message');
+ 
+         $this->assertEquals('success', $response['status']);
+         $this->assertEquals('TEST123', $response['message_sid']);
+     }
+ 
 
     /**
      * @test
