@@ -48,12 +48,21 @@ class WhatsApp {
 
     // init. Twilio Client
     protected function initializeTwilioClient() {
-        $this->client = new TwilioClient($this->accountSid);
+        $this->client = new TwilioClient($this->accountSid, $this->authToken);
 
     }
 
-    // send whatsapp msg
-    public function sendMessage($to, $message) {
+    // send message - default provider
+    public function sendMessage($to, $message){
+        if($this->provider === 'twilio'){
+            return $this->sendMessage($to, $message);
+
+        }
+        return $this->sendMessage($to, $message);
+    }
+
+    // send whatsapp msg - Twilio API
+    public function sendTwilioMessage($to, $message) {
         try {
             $response = $this->client->post($this->phoneNumberId .'/messages', [
                 'json' => [
