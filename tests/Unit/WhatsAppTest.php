@@ -132,6 +132,20 @@ class WhatsAppTest extends TestCase
         $this->assertEquals('no_messages', $result['status']);
     }
 
+    /**
+     * @test
+     */
+
+     public function it_validates_required_config(){
+        $this->expectException(WhatsAppException::class);
+        $this->expectExceptionMessage('Missing required configuration: account_sid');
+
+        new WhatsApp([
+            'auth_token'=> 'test-auth-token',
+            'from_number' => '+1234567890'
+        ]);
+     }
+    
 
     public function tearDown(): void
     {
