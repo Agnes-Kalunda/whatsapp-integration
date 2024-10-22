@@ -107,57 +107,31 @@ class WhatsAppTest extends TestCase
     public function it_handles_webhook_messages_successfully()
     {
         $payload = [
-            'entry' => [
-                [
-                    'changes' => [
-                        [
-                            'value' => [
-                                'messages' => [
-                                    [
-                                        'id' => 'message-id-123',
-                                        'from' => '1234567890',
-                                        'timestamp' => '1609459200',
-                                        'text' => ['body' => 'Hello!'],
-                                        'type' => 'text'
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
+            'MessageSid' => 'MSG123',
+            'From' => 'whatsapp:+1234567890',
+            'Body' => 'Hello!'
         ];
 
         $result = $this->whatsapp->handleWebhook($payload);
 
-        // assert webhook handled correctly
         $this->assertEquals('success', $result['status']);
         $this->assertCount(1, $result['message']);
         $this->assertEquals('Hello!', $result['message'][0]['text']);
     }
+
 
      /**
      * @test
      */
     public function it_returns_no_messages_when_webhook_is_empty()
     {
-        $payload = [
-            'entry' => [
-                [
-                    'changes' => [
-                        [
-                            'value' => []
-                        ]
-                    ]
-                ]
-            ]
-        ];
+        $payload = [];
 
         $result = $this->whatsapp->handleWebhook($payload);
 
-        // assert no messages in payload
         $this->assertEquals('no_messages', $result['status']);
     }
+
 
     public function tearDown(): void
     {
