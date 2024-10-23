@@ -15,7 +15,14 @@ class WhatsApp {
     protected const RATE_LIMIT_ERROR_CODE = 429;
     protected const AUTH_ERROR_CODES = [401, 403];
 
-    public function __construct(array $config) {
+    public function __construct(array $config = null) {
+        if ($config === null) {
+            throw new WhatsAppException(
+                'WhatsApp configuration is required',
+                400
+            );
+        }
+        
         $this->validateConfig($config);
         $this->fromNumber = $config['from_number'];
         $this->timeout = $config['timeout'] ?? 30;
@@ -33,6 +40,15 @@ class WhatsApp {
             );
         }
 
+        foreach ($required as $field) {
+            if (empty(trim($config[$field]))) {
+                throw new WhatsAppException(
+                    "Configuration field '$field' cannot be empty",
+                    400
+                );
+            }
+        }
+
         if (!$this->isValidPhoneNumber($config['from_number'])) {
             throw new WhatsAppException(
                 "Invalid 'from_number' format in configuration. Must be E.164 format (e.g., +1234567890)",
@@ -41,19 +57,22 @@ class WhatsApp {
         }
     }
 
-    protected function initializeClient($accountSid, $authToken) {
-        try {
-            $this->client = new Client($accountSid, $authToken);
-        } catch (TwilioException $e) {
-            throw new WhatsAppException('Failed to initialize Twilio client: Invalid credentials', 401);
-        } catch (\Exception $e) {
-            throw new WhatsAppException('Failed to initialize Twilio client: ' . $e->getMessage(), 500);
-        }
-    }
 
-    public function sendMessage($to, $message) {
+    public function sendMessage($to = null, $message = null) {
+        // Pre-validate parameters before any API calls
+        if ($to === null) {
+            throw new WhatsAppException('Recipient phone number is required', 400);
+        }
+
+        if ($message === null) {
+            throw new WhatsAppException('Message content is required', 400);
+        }
+
         if (!$this->isValidPhoneNumber($to)) {
-            throw new WhatsAppException('Invalid recipient phone number format.', 400);
+            throw new WhatsAppException(
+                'Invalid recipient phone number format. Must be E.164 format (e.g., +1234567890)',
+                400
+            );
         }
 
         $this->validateMessage($message);
@@ -75,13 +94,15 @@ class WhatsApp {
             ];
         } catch (RestException $e) {
             $this->handleTwilioError($e);
+        } catch (TwilioException $e) {
+            throw new WhatsAppException('Twilio authentication error: ' . $e->getMessage(), 401);
         } catch (\Exception $e) {
             throw new WhatsAppException('Unexpected error while sending WhatsApp message: ' . $e->getMessage(), 500);
         }
     }
 
     protected function validateMessage($message) {
-        if (empty(trim($message))) {
+        if ($message === null || empty(trim($message))) {
             throw new WhatsAppException('Message content cannot be empty', 400);
         }
 
@@ -122,7 +143,11 @@ class WhatsApp {
         return preg_replace('/[^0-9]/', '', $number);
     }
 
-    public function handleWebhook($payload) {
+    public function handleWebhook($payload = null) {
+        if ($payload === null) {
+            throw new WhatsAppException('Webhook payload is required', 400);
+        }
+
         if (!is_array($payload)) {
             throw new WhatsAppException('Invalid webhook payload format', 400);
         }
