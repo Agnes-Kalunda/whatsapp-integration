@@ -69,7 +69,7 @@ Add the following to your `.env` file:
 # mandatory settings
 TWILIO_ACCOUNT_SID=your_twilio_account_sid
 TWILIO_AUTH_TOKEN=your_twilio_auth_token
-WHATSAPP_FROM_NUMBER=your_whatsapp_number  # Format: +1234567890
+TWILIO_FROM_NUMBER=your_whatsapp_number  # Format: +1234567890
 
 # optional settings
 WHATSAPP_TIMEOUT=30  # API request timeout in seconds
