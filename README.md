@@ -134,4 +134,48 @@ $response = $whatsapp->sendMessage('+1234567890', $longMessage);
 ### Webhook Handling
 
 Setting up webhook handling:
+```php
+public function handleIncomingMessage(Request $request, WhatsApp $whatsapp)
+{
+    try {
+        $response = $whatsapp->handleWebhook($request->all());
+        
+        if ($response['status'] === 'success') {
+            $message = $response['message'][0];
+            $text = $message['text'];
+            $sender = $message['from'];
+            // process the message
+        }
+    } catch (WhatsAppException $e) {
+        // handle error
+        report($e);
+    }
+}
+```
+
+## Error Handling
+
+The package throws `WhatsAppException` for various error conditions:
+
+- Invalid phone number format
+- Empty messages
+- API errors
+- Configuration errors
+- Rate limiting (429 error code)
+
+```php
+try {
+    $response = $whatsapp->sendMessage($to, $message);
+} catch (WhatsAppException $e) {
+    switch ($e->getCode()) {
+        case 429:
+            // handle rate limiting
+            break;
+        default:
+            // handle other errors
+            break;
+    }
+}
+```
+
 
