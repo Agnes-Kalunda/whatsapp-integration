@@ -163,6 +163,8 @@ The package throws `WhatsAppException` for various error conditions:
 - Configuration errors
 - Rate limiting (429 error code)
 
+### Exception Handling
+
 ```php
 try {
     $response = $whatsapp->sendMessage($to, $message);
