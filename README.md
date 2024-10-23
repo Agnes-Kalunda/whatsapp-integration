@@ -178,4 +178,23 @@ try {
 }
 ```
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
+
+
+
+
+### Credits
+
+- [Twilio SDK](https://github.com/twilio/twilio-php)
+
+
+### Author
+
+- **Agnes** - [agypeter97@gmail.com](mailto:agypeter97@gmail.com)
 
