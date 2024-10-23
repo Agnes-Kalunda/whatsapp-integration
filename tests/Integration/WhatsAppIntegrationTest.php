@@ -14,7 +14,6 @@ class WhatsAppIntegrationTest extends TestCase
 
     protected function setUp(): void
     {
-        
         $projectRoot = dirname(dirname(__DIR__));
         
         try {
@@ -32,7 +31,7 @@ class WhatsAppIntegrationTest extends TestCase
             return;
         }
 
-        // ensure no.  starts with + and contains only digits after
+        // ensure phone number starts with + and contains only digits after
         $phoneNumber = getenv('TEST_PHONE_NUMBER');
         if (strpos($phoneNumber, '+') !== 0) {
             $phoneNumber = '+' . $phoneNumber;
@@ -47,23 +46,18 @@ class WhatsAppIntegrationTest extends TestCase
         ]);
     }
 
-   
-
-
     /**
      * @test
      */
-    // check correct no. format
     public function test_invalid_phone_number_format_no_plus()
     {
         $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Invalid phone number format.');
+        $this->expectExceptionMessage('Invalid recipient phone number format.'); 
         
         $this->whatsapp->sendMessage('12345', 'Test message');
     }
 
-
-     /**
+    /**
      * @test
      */
     public function test_sends_message_with_maximum_length()
@@ -78,7 +72,7 @@ class WhatsAppIntegrationTest extends TestCase
         }
     }
 
-     /**
+    /**
      * @test
      */
     public function test_sends_message_with_special_characters()
@@ -88,7 +82,7 @@ class WhatsAppIntegrationTest extends TestCase
         try {
             $response = $this->whatsapp->sendMessage($this->validPhoneNumber, $message);
             $this->assertEquals('success', $response['status']);
-            $this->assertArrayHasKey('message_sid', $response);
+            $this->assertArrayHasKey('message', $response);
         } catch (WhatsAppException $e) {
             $this->fail('Failed to send message with special characters: ' . $e->getMessage());
         }
@@ -100,7 +94,7 @@ class WhatsAppIntegrationTest extends TestCase
     public function test_invalid_phone_number_format_with_letters()
     {
         $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Invalid phone number format.');
+        $this->expectExceptionMessage('Invalid recipient phone number format.'); 
         
         $this->whatsapp->sendMessage('+1234abc5678', 'Test message');
     }
@@ -111,7 +105,7 @@ class WhatsAppIntegrationTest extends TestCase
     public function test_invalid_phone_number_format_double_plus()
     {
         $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Invalid phone number format.');
+        $this->expectExceptionMessage('Invalid recipient phone number format.');
         
         $this->whatsapp->sendMessage('++1234567890', 'Test message');
     }
@@ -122,7 +116,7 @@ class WhatsAppIntegrationTest extends TestCase
     public function test_invalid_phone_number_too_short()
     {
         $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Invalid phone number format.');
+        $this->expectExceptionMessage('Invalid recipient phone number format.'); 
         
         $this->whatsapp->sendMessage('+123', 'Test message');
     }
@@ -130,8 +124,7 @@ class WhatsAppIntegrationTest extends TestCase
     /**
      * @test
      */
-    // webhook payload tests
-     public function test_handles_webhook_with_minimal_data()
+    public function test_handles_webhook_with_minimal_data()
     {
         $payload = [
             'Body' => 'Simple message'
@@ -167,7 +160,6 @@ class WhatsAppIntegrationTest extends TestCase
         $this->assertEquals('Complete webhook test message', $result['message'][0]['text']);
     }
 
-    
     /**
      * @test
      */
@@ -188,7 +180,7 @@ class WhatsAppIntegrationTest extends TestCase
         }
     }
 
-       /**
+    /**
      * @test
      */
     public function test_handles_empty_webhook_payload()
@@ -197,10 +189,9 @@ class WhatsAppIntegrationTest extends TestCase
         $this->assertEquals('no_messages', $result['status']);
     }
 
-      /**
+    /**
      * @test
      */
-    // whitespace handling in msgs
     public function test_handles_whitespace_in_message()
     {
         $messages = [
