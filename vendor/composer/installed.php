@@ -1,11 +1,11 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => 'dev-master',
-        'version' => 'dev-master',
+        'pretty_version' => '1.0.5',
+        'version' => '1.0.5.0',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '1119171a08e00fc8c24ed871c802e11b62beca96',
+        'reference' => null,
         'name' => 'chat/whatsapp-integration',
         'dev' => true,
     ),
@@ -20,12 +20,12 @@
             'dev_requirement' => false,
         ),
         'chat/whatsapp-integration' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
+            'pretty_version' => '1.0.5',
+            'version' => '1.0.5.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '1119171a08e00fc8c24ed871c802e11b62beca96',
+            'reference' => null,
             'dev_requirement' => false,
         ),
         'cordoval/hamcrest-php' => array(
