@@ -29,6 +29,14 @@ class WhatsApp {
         $this->initializeClient($config['account_sid'], $config['auth_token']);
     }
 
+    protected function initializeClient($accountSid, $authToken) {
+        try {
+            $this->client = new Client($accountSid, $authToken);
+        } catch (TwilioException $e) {
+            throw new WhatsAppException('Failed to initialize Twilio client: ' . $e->getMessage(), 401);
+        }
+    }
+
     protected function validateConfig(array $config) {
         $required = ['account_sid', 'auth_token', 'from_number'];
         $missing = array_diff($required, array_keys($config));
@@ -147,22 +155,42 @@ class WhatsApp {
         if ($payload === null) {
             throw new WhatsAppException('Webhook payload is required', 400);
         }
-
+    
         if (!is_array($payload)) {
             throw new WhatsAppException('Invalid webhook payload format', 400);
         }
-
+    
         try {
+            
             if (!isset($payload['Body'])) {
                 return ['status' => 'no_messages'];
             }
-
+    
+            
+            $fromNumber = $payload['From'] ?? '';
+            if (!$this->isValidPhoneNumber($fromNumber)) {
+                throw new WhatsAppException(
+                    'Invalid sender phone number format in webhook payload. Must be E.164 format (e.g., +1234567890)',
+                    400
+                );
+            }
+    
+            
+            $toNumber = $payload['To'] ?? ''; 
+            if (!$this->isValidPhoneNumber($toNumber)) {
+                throw new WhatsAppException(
+                    'Invalid recipient phone number format in webhook payload. Must be E.164 format (e.g., +1234567890)',
+                    400
+                );
+            }
+    
             return [
                 'status' => 'success',
                 'message' => [
                     [
                         'message_id' => $payload['MessageSid'] ?? null,
-                        'from' => str_replace('whatsapp:', '', $payload['From'] ?? ''),
+                        'from' => str_replace('whatsapp:', '', $fromNumber),
+                        'to' => str_replace('whatsapp:', '', $toNumber), 
                         'timestamp' => time(),
                         'text' => $payload['Body'],
                         'type' => 'text'
@@ -173,4 +201,4 @@ class WhatsApp {
             throw new WhatsAppException('Failed to process webhook: ' . $e->getMessage(), 500);
         }
     }
-}
+}    
