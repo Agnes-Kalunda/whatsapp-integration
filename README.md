@@ -1,38 +1,21 @@
-# whatsapp-integration
+# WhatsApp Integration
 
-
-
-**WhatsApp Integration** is a package that allows you to send WhatsApp messages using the Twilio API in your Laravel 5.8+ applications. It provides a simple API for sending text messages, handling incoming messages, and interacting with the WhatsApp API seamlessly.
+A robust Laravel package for integrating WhatsApp messaging capabilities using the Twilio API. This package provides a clean, well-tested interface for sending WhatsApp messages and handling incoming messages in Laravel 5.8+ applications.
 
 [![MIT Licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
 
-## Menu
+## Table of Contents
 
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Configuration](#configuration)
-  - [Environment Variables](#environment-variables)
-  - [Publishing Config](#publishing-config)
-- [Features](#features)
 - [Usage](#usage)
   - [Sending Messages](#sending-messages)
-    - [Simple Message](#sending-messages)
-    - [Messages with Special Characters](#sending-messages-with-special-characters)
-    - [Long Messages](#sending-long-messages)
-  - [Webhook Handling](#webhook-handling)
-    - [Basic Webhook Setup](#webhook-handling)
-    - [Processing Messages](#processing-incoming-messages)
-    
+  - [Handling Webhooks](#handling-webhooks)
 - [Error Handling](#error-handling)
-  - [Common Errors](#common-errors)
-  - [Exception Handling](#exception-handling)
-  
 - [Testing](#testing)
-  - [Running Tests](#running-tests)
-  - [Test Environment Setup](#test-environment-setup)
 - [Contributing](#contributing)
 - [License](#license)
-
 
 ## Requirements
 
@@ -43,50 +26,39 @@
 
 ## Installation
 
-You can install the package via Composer:
+1. Install the package via Composer:
 
 ```bash
 composer require chat/whatsapp-integration
 ```
 
-
-
 ## Configuration
 
-### Publishing Config
-
-Publish the configuration file:
+1. Publish the configuration file:
 
 ```bash
 php artisan vendor:publish --provider="Chat\WhatsappIntegration\WhatsAppIntegrationServiceProvider" --tag=whatsapp-config
 ```
 
-### Environment Variables
-
-Add the following to your `.env` file:
+2. Add the following to your `.env` file:
 
 ```env
-# mandatory settings
 TWILIO_ACCOUNT_SID=your_twilio_account_sid
 TWILIO_AUTH_TOKEN=your_twilio_auth_token
 TWILIO_FROM_NUMBER=your_whatsapp_number  # Format: +1234567890
-
-# optional settings
-WHATSAPP_TIMEOUT=30  # API request timeout in seconds
+WHATSAPP_TIMEOUT=30  # Optional: API timeout in seconds
 ```
 
+3. Configuration file structure (`config/whatsapp.php`):
 
-
-## Features
-
-- Use WhatsApp API to send WhatsApp messages with Twilio as the Service Provider.
-- Handle incoming WhatsApp messages through webhooks
-- Robust error handling and input validation
-- Support for special characters and unicode messages
-- Extensive test coverage
-- Maximum message length support (up to 1600 characters)
-- Whitespace handling
-- Phone number validation and formatting
+```php
+return [
+    'account_sid' => env('TWILIO_ACCOUNT_SID'),
+    'auth_token' => env('TWILIO_AUTH_TOKEN'),
+    'from_number' => env('TWILIO_FROM_NUMBER'),
+    'timeout' => env('WHATSAPP_TIMEOUT', 30)
+];
+```
 
 ## Usage
 
@@ -96,74 +68,81 @@ Basic message sending:
 
 ```php
 use Chat\WhatsappIntegration\WhatsApp;
+use Chat\WhatsappIntegration\Exceptions\WhatsAppException;
 
-public function sendWhatsAppMessage(WhatsApp $whatsapp)
+public function sendMessage(WhatsApp $whatsapp)
 {
     try {
         $response = $whatsapp->sendMessage(
-            '+1234567890',  // recipient's number with country code
+            '+1234567890',  // recipient's number (E.164 format)
             'Hello from Laravel!'
         );
         
+        // Success response structure:
+        // [
+        //     'status' => 'success',
+        //     'message' => 'SM...', // Twilio message SID
+        //     'to' => '+1234567890',
+        //     'from' => '+0987654321'
+        // ]
+        
         if ($response['status'] === 'success') {
-            // message sent successfully
-            $messageSid = $response['message_sid'];
+            $messageSid = $response['message'];
+            $recipientNumber = $response['to'];
+            // Process success...
         }
     } catch (WhatsAppException $e) {
-        // handle error
+        // Handle error...
         report($e);
     }
 }
 ```
 
-### Sending Messages with Special Characters
+### Handling Webhooks
+
+Process incoming WhatsApp messages:
 
 ```php
-$message = 'Special characters: áéíóú ñ € § @ # $ % & *';
-$response = $whatsapp->sendMessage('+1234567890', $message);
-```
+use Illuminate\Http\Request;
 
-### Sending Long Messages
-
-```php
-// messages up to 1600 characters are supported
-$longMessage = str_repeat('Your long message here. ', 50);
-$response = $whatsapp->sendMessage('+1234567890', $longMessage);
-```
-
-### Webhook Handling
-
-Setting up webhook handling:
-```php
-public function handleIncomingMessage(Request $request, WhatsApp $whatsapp)
+public function handleWebhook(Request $request, WhatsApp $whatsapp)
 {
     try {
         $response = $whatsapp->handleWebhook($request->all());
+        
+        // Successful webhook response structure:
+        // [
+        //     'status' => 'success',
+        //     'message' => [
+        //         [
+        //             'message_id' => 'SM...',
+        //             'from' => '+1234567890',
+        //             'to' => '+0987654321',
+        //             'timestamp' => 1234567890,
+        //             'text' => 'Message content',
+        //             'type' => 'text'
+        //         ]
+        //     ]
+        // ]
         
         if ($response['status'] === 'success') {
             $message = $response['message'][0];
             $text = $message['text'];
             $sender = $message['from'];
-            // process the message
+            $messageId = $message['message_id'];
+            
+            // Process the message...
         }
     } catch (WhatsAppException $e) {
-        // handle error
         report($e);
+        // Handle error...
     }
 }
 ```
 
 ## Error Handling
 
-The package throws `WhatsAppException` for various error conditions:
-
-- Invalid phone number format
-- Empty messages
-- API errors
-- Configuration errors
-- Rate limiting (429 error code)
-
-### Exception Handling
+The package throws `WhatsAppException` with specific error codes and messages:
 
 ```php
 try {
@@ -171,11 +150,78 @@ try {
 } catch (WhatsAppException $e) {
     switch ($e->getCode()) {
         case 429:
-            // handle rate limiting
+            // Rate limit exceeded
+            Log::warning('WhatsApp rate limit exceeded');
+            break;
+        case 401:
+            // Authentication failed
+            Log::error('WhatsApp authentication failed');
+            break;
+        case 404:
+            // Number not registered with WhatsApp
+            Log::error('Recipient not on WhatsApp');
+            break;
+        case 400:
+            // Invalid request (e.g., unverified number)
+            Log::error('Invalid WhatsApp request');
             break;
         default:
-            // handle other errors
+            Log::error('WhatsApp error: ' . $e->getMessage());
             break;
+    }
+}
+```
+
+Common error scenarios:
+- Invalid phone number format (must be E.164: +1234567890)
+- Empty or too long messages (max 1600 characters)
+- Authentication errors (invalid credentials)
+- Rate limiting
+- Unverified recipient numbers
+- Network or API errors
+
+## Testing
+
+1. Set up your test environment:
+```bash
+cp .env.example .env.testing
+```
+
+2. Configure test credentials in `.env.testing`:
+```env
+TWILIO_ACCOUNT_SID=your_test_sid
+TWILIO_AUTH_TOKEN=your_test_token
+TWILIO_FROM_NUMBER=your_test_number
+```
+
+3. Run tests:
+```bash
+vendor/bin/phpunit
+```
+
+Example test:
+```php
+use Tests\TestCase;
+use Chat\WhatsappIntegration\WhatsApp;
+
+class WhatsAppTest extends TestCase
+{
+    /** @test */
+    public function it_can_send_a_message()
+    {
+        $whatsapp = new WhatsApp([
+            'account_sid' => 'test_sid',
+            'auth_token' => 'test_token',
+            'from_number' => '+1234567890'
+        ]);
+
+        $response = $whatsapp->sendMessage(
+            '+1234567890',
+            'Test message'
+        );
+
+        $this->assertEquals('success', $response['status']);
+        $this->assertNotEmpty($response['message']);
     }
 }
 ```
@@ -188,15 +234,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
-
-
-
-### Credits
+## Credits
 
 - [Twilio SDK](https://github.com/twilio/twilio-php)
 
-
-### Author
+## Author
 
 - **Agnes** - [agypeter97@gmail.com](mailto:agypeter97@gmail.com)
 

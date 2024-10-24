@@ -90,6 +90,21 @@ class WhatsAppIntegrationTest extends TestCase
     }
 
     /** @test */
+public function it_throws_exception_for_missing_account_sid()
+{
+    $this->expectException(WhatsAppException::class);
+    $this->expectExceptionMessage("Missing required configuration: account_sid");
+
+    $config = [
+        'auth_token' => 'valid_auth_token',
+        'from_number' => 'valid_from_number'
+    ];
+
+    new WhatsApp($config);
+}
+
+
+    /** @test */
     public function it_throws_exception_for_empty_configuration_field()
     {
         $this->expectException(WhatsAppException::class);
@@ -103,6 +118,8 @@ class WhatsAppIntegrationTest extends TestCase
 
         new WhatsApp($config);
     }
+
+    
 
     /** @test */
     public function it_can_handle_webhook_payload()
