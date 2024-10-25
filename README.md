@@ -181,6 +181,13 @@ Common error scenarios:
 - Network or API errors
 
 ## Testing
+To run Integral tests, run the command below
+```bash
+vendor/bin/phpunit tests/Integration/WhatsAppIntegrationTest.php
+
+
+```
+
 
 1. Set up your test environment:
 ```bash
