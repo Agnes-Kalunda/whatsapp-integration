@@ -183,8 +183,13 @@ Common error scenarios:
 ## Testing
 To run Integral tests, run the command below
 ```bash
-vendor/bin/phpunit tests/Integration/WhatsAppIntegrationTest.php
+./vendor/bin/phpunit tests/Integration/WhatsAppIntegrationTest.php
 
+```
+
+To run the mock tests, run the command below
+```bash
+./vendor/bin/phpunit tests/Unit/WhatsAppMockTest.php
 
 ```
 
