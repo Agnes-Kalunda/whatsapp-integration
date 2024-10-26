@@ -6,4 +6,3 @@ return [
     'from_number' => env('TWILIO_FROM_NUMBER', '+1234567890'),
     'timeout' => env('WHATSAPP_TIMEOUT', 30),
 ];
-

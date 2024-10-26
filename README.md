@@ -1,6 +1,6 @@
 # WhatsApp Integration
 
-A robust Laravel package for integrating WhatsApp messaging capabilities using the Twilio API. This package provides a clean, well-tested interface for sending WhatsApp messages and handling incoming messages in Laravel 5.8+ applications.
+This is a Composer package that integrates basic WhatsApp features into laravel apps.This package handles the functionalities for sending WhatsApp messages and handling incoming messages in Laravel 5.8+ applications.
 
 [![MIT Licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
 
@@ -181,17 +181,6 @@ Common error scenarios:
 - Network or API errors
 
 ## Testing
-To run Integral tests, run the command below
-```bash
-./vendor/bin/phpunit tests/Integration/WhatsAppIntegrationTest.php
-
-```
-
-To run the mock tests, run the command below
-```bash
-./vendor/bin/phpunit tests/Unit/WhatsAppMockTest.php
-
-```
 
 
 1. Set up your test environment:
@@ -209,6 +198,18 @@ TWILIO_FROM_NUMBER=your_test_number
 3. Run tests:
 ```bash
 vendor/bin/phpunit
+```
+
+To run Integral tests, run the command below
+```bash
+./vendor/bin/phpunit tests/Integration/WhatsAppIntegrationTest.php
+
+```
+
+To run the mock tests, run the command below
+```bash
+./vendor/bin/phpunit tests/Unit/WhatsAppMockTest.php
+
 ```
 
 Example test:
