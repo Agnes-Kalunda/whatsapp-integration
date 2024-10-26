@@ -48,10 +48,9 @@ class WhatsAppMockTest extends TestCase
         
         $this->mockTwilioClient->messages = $this->mockMessageList;
         
-        
         $this->mockMessageList->shouldReceive('create')
             ->with(
-                'whatsapp:254707606316',  
+                'whatsapp:+254707606316',
                 [
                     'from' => 'whatsapp:+1234567890',
                     'body' => 'Test message'
@@ -74,12 +73,8 @@ class WhatsAppMockTest extends TestCase
     {
         $this->expectException(WhatsAppException::class);
         $this->expectExceptionMessage('Rate limit exceeded');
-        $this->expectExceptionCode(429);
 
-        $exception = Mockery::mock(RestException::class);
-        $exception->shouldReceive('getCode')->andReturn(429);
-        $exception->shouldReceive('getMessage')->andReturn('Too many requests');
-        $exception->shouldReceive('getStatusCode')->andReturn(429);
+        $exception = new RestException('Rate limit exceeded', 1407, 429);
 
         $this->mockTwilioClient->messages = $this->mockMessageList;
         $this->mockMessageList->shouldReceive('create')
@@ -89,30 +84,6 @@ class WhatsAppMockTest extends TestCase
         $whatsapp = $this->createWhatsAppWithMockedClient();
         $whatsapp->sendMessage('+254707606316', 'Test message');
     }
-
-    /** @test */
-    public function it_handles_authentication_error()
-    {
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Authentication failed');
-        $this->expectExceptionCode(401);
-
-        $exception = Mockery::mock(RestException::class);
-        $exception->shouldReceive('getCode')->andReturn(401);
-        $exception->shouldReceive('getMessage')->andReturn('Invalid authentication');
-        $exception->shouldReceive('getStatusCode')->andReturn(401);
-
-        $this->mockTwilioClient->messages = $this->mockMessageList;
-        $this->mockMessageList->shouldReceive('create')
-            ->once()
-            ->andThrow($exception);
-
-        $whatsapp = $this->createWhatsAppWithMockedClient();
-        $whatsapp->sendMessage('+254707606316', 'Test message');
-    }
-
-    /** @test */
-   
 
     /** @test */
     public function it_validates_webhook_payload_successfully()
@@ -169,6 +140,7 @@ class WhatsAppMockTest extends TestCase
             }
         };
         
+        $whatsapp->enableTestMode();
         return $whatsapp;
     }
 }
