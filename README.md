@@ -1,6 +1,6 @@
 # WhatsApp Integration
 
-This is a Composer package that integrates basic WhatsApp features into laravel apps.This package handles the functionalities for sending WhatsApp messages and handling incoming messages in Laravel 5.8+ applications.
+This is a Composer package that integrates basic WhatsApp features into laravel apps using WhatsApp API with Twilio as the Business provider.This package handles the functionalities for sending WhatsApp messages and handling incoming messages in Laravel 5.8+ applications.
 
 [![MIT Licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
 
