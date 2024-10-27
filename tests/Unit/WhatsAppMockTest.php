@@ -4,6 +4,8 @@ namespace Tests\Unit;
 
 use Chat\WhatsappIntegration\WhatsApp;
 use Chat\WhatsappIntegration\Exceptions\WhatsAppException;
+use Chat\WhatsappIntegration\Exceptions\ValidationException;
+use Chat\WhatsappIntegration\Exceptions\ConnectionException;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 use Twilio\Rest\Client;
@@ -15,25 +17,26 @@ class WhatsAppMockTest extends TestCase
     protected $mockClient;
     protected $mockValidator;
     protected $whatsapp;
+    protected $validPhoneNumber = '+12025550123'; 
 
     protected function setUp(): void
     {
         parent::setUp();
         
-        // mock Twilio Client
+        
         $this->mockClient = Mockery::mock(Client::class);
         
-        // mock RequestValidator
+        
         $this->mockValidator = Mockery::mock(RequestValidator::class);
 
-        // config for WhatsApp instance
+        
         $config = [
             'account_sid' => 'ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
             'auth_token' => 'your_auth_token',
-            'from_number' => '+1234567890'
+            'from_number' => '+12025550180' 
         ];
         
-        // create WhatsApp instance with mocked dependencies
+        // whatsApp instance with mocked dependencies
         $this->whatsapp = new WhatsApp($config, $this->mockClient, $this->mockValidator);
     }
 
@@ -45,44 +48,45 @@ class WhatsAppMockTest extends TestCase
 
     public function testSendMessage()
     {
-        $to = '+0987654321';
         $message = 'Hello, this is a test message.';
         $expectedResponse = Mockery::mock('Twilio\Rest\Api\V2010\Account\MessageInstance');
+        $expectedResponse->sid = 'MGXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+        $expectedResponse->status = 'queued';
 
         $this->mockClient->messages = Mockery::mock('Twilio\Rest\Api\V2010\Account\MessageList');
         $this->mockClient->messages
             ->shouldReceive('create')
             ->once()
-            ->with('whatsapp:' . $to, [
-                'from' => 'whatsapp:+1234567890',
+            ->with('whatsapp:' . $this->validPhoneNumber, [
+                'from' => 'whatsapp:+12025550180',
                 'body' => $message
             ])
             ->andReturn($expectedResponse);
 
-        $response = $this->whatsapp->sendMessage($to, $message);
+        $response = $this->whatsapp->sendMessage($this->validPhoneNumber, $message);
 
         $this->assertInstanceOf('Twilio\Rest\Api\V2010\Account\MessageInstance', $response);
+        $this->assertEquals('MGXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', $response->sid);
     }
 
     public function testSendMessageThrowsWhatsAppException()
     {
-        $to = '+0987654321';
         $message = 'Hello, this is a test message.';
 
         $this->mockClient->messages = Mockery::mock('Twilio\Rest\Api\V2010\Account\MessageList');
         $this->mockClient->messages
             ->shouldReceive('create')
             ->once()
-            ->with('whatsapp:' . $to, [
-                'from' => 'whatsapp:+1234567890',
+            ->with('whatsapp:' . $this->validPhoneNumber, [
+                'from' => 'whatsapp:+12025550180',
                 'body' => $message
             ])
-            ->andThrow(new RestException('An error occurred', 500));
+            ->andThrow(new RestException('Authentication error', 20003));
 
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('An error occurred');
+        $this->expectException(ConnectionException::class);
+        $this->expectExceptionMessage('Failed to authenticate with Twilio API');
 
-        $this->whatsapp->sendMessage($to, $message);
+        $this->whatsapp->sendMessage($this->validPhoneNumber, $message);
     }
 
     public function testValidateWebhookSignature()
@@ -114,8 +118,8 @@ class WhatsAppMockTest extends TestCase
             ->with($signature, $url, $params)
             ->andReturn(false);
 
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Invalid Twilio webhook signature.');
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('Invalid webhook signature');
 
         $this->whatsapp->validateWebhookSignature($signature, $url, $params);
     }
@@ -124,12 +128,13 @@ class WhatsAppMockTest extends TestCase
     {
         $requestData = [
             'MessageSid' => 'SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-            'From' => 'whatsapp:+0987654321',
-            'To' => 'whatsapp:+1234567890',
+            'From' => 'whatsapp:+12025550123',
+            'To' => 'whatsapp:+12025550180',
             'Body' => 'Hello, this is a test message.',
             'Status' => 'delivered',
             'NumMedia' => '1',
-            'MediaUrl0' => 'https://example.com/media.jpg'
+            'MediaUrl0' => 'https://example.com/media.jpg',
+            'MediaContentType0' => 'image/jpeg'
         ];
         $url = 'https://example.com/webhook';
         $signature = 'valid_signature';
@@ -148,14 +153,15 @@ class WhatsAppMockTest extends TestCase
         $this->assertEquals($requestData['Body'], $result['Body']);
         $this->assertEquals($requestData['Status'], $result['Status']);
         $this->assertCount(1, $result['MediaUrls']);
+        $this->assertEquals('image/jpeg', $result['MediaUrls'][0]['contentType']);
     }
 
     public function testHandleWebhookInvalidSignature()
     {
         $requestData = [
             'MessageSid' => 'SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-            'From' => 'whatsapp:+0987654321',
-            'To' => 'whatsapp:+1234567890',
+            'From' => 'whatsapp:+12025550123',
+            'To' => 'whatsapp:+12025550180',
             'Body' => 'Hello, this is a test message.'
         ];
         $url = 'https://example.com/webhook';
@@ -167,8 +173,30 @@ class WhatsAppMockTest extends TestCase
             ->with($signature, $url, $requestData)
             ->andReturn(false);
 
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Invalid Twilio webhook signature.');
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('Invalid webhook signature');
+
+        $this->whatsapp->handleWebhook($requestData, $url, $signature);
+    }
+
+    public function testInvalidPhoneNumberFormat()
+    {
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('Invalid phone number format: invalid-number');
+        
+        $this->whatsapp->sendMessage('invalid-number', 'Test message');
+    }
+
+    public function testMissingMessageSid()
+    {
+        $requestData = [
+            'Body' => 'Test message'
+        ];
+        $url = 'https://example.com/webhook';
+        $signature = 'valid_signature';
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('Missing MessageSid in webhook data');
 
         $this->whatsapp->handleWebhook($requestData, $url, $signature);
     }

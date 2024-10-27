@@ -1,7 +1,7 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => '1.0.5',
-        'version' => '1.0.5.0',
+        'pretty_version' => '2.0.1',
+        'version' => '2.0.1.0',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -20,8 +20,8 @@
             'dev_requirement' => false,
         ),
         'chat/whatsapp-integration' => array(
-            'pretty_version' => '1.0.5',
-            'version' => '1.0.5.0',
+            'pretty_version' => '2.0.1',
+            'version' => '2.0.1.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -93,6 +93,24 @@
             'aliases' => array(),
             'reference' => '8c3d0a3f6af734494ad8f6fbbee0ba92422859f3',
             'dev_requirement' => true,
+        ),
+        'illuminate/cache' => array(
+            'pretty_version' => 'v5.8.36',
+            'version' => '5.8.36.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../illuminate/cache',
+            'aliases' => array(),
+            'reference' => 'e6acac59f94c6362809b580918f7f3f6142d5796',
+            'dev_requirement' => false,
+        ),
+        'illuminate/container' => array(
+            'pretty_version' => 'v5.8.36',
+            'version' => '5.8.36.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../illuminate/container',
+            'aliases' => array(),
+            'reference' => 'b42e5ef939144b77f78130918da0ce2d9ee16574',
+            'dev_requirement' => false,
         ),
         'illuminate/contracts' => array(
             'pretty_version' => 'v5.8.36',

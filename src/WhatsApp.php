@@ -5,12 +5,11 @@ namespace Chat\WhatsappIntegration;
 use Twilio\Rest\Client;
 use Twilio\Security\RequestValidator;
 use Chat\WhatsappIntegration\Exceptions\WhatsAppException;
-use Chat\WhatsappIntegration\Exceptions\RateLimitException;
 use Chat\WhatsappIntegration\Exceptions\ValidationException;
+use Chat\WhatsappIntegration\Exceptions\RateLimitException;
 use Chat\WhatsappIntegration\Exceptions\ConnectionException;
 use Twilio\Exceptions\RestException;
-use Illuminate\Cache\CacheManager;
-use Carbon\Carbon;
+use Illuminate\Contracts\Cache\Repository as Cache;
 
 class WhatsApp 
 {
@@ -22,20 +21,66 @@ class WhatsApp
     // rate limiting constants
     const RATE_LIMIT_KEY = 'whatsapp_rate_limit:';
     const MAX_REQUESTS_PER_MINUTE = 60;
-    const RATE_LIMIT_WINDOW = 60;
+    const RATE_LIMIT_WINDOW = 60; 
 
+    /**
+     * WhatsApp constructor.
+     *
+     * @param array $config
+     * @param Client|null $client
+     * @param RequestValidator|null $validator
+     * @param Cache|null $cache
+     * @throws ValidationException
+     */
     public function __construct(
         array $config, 
         Client $client = null, 
         RequestValidator $validator = null,
-        CacheManager $cache = null
+        Cache $cache = null
     ) {
         $this->validateConfig($config);
         
         $this->config = $config;
         $this->client = $client ?? new Client($config['account_sid'], $config['auth_token']);
         $this->validator = $validator ?? new RequestValidator($config['auth_token']);
-        $this->cache = $cache ?? app(CacheManager::class);
+        $this->cache = $cache;
+    }
+
+    /**
+     * check rate limits before sending message
+     *
+     * @param string $to
+     * @throws RateLimitException
+     */
+    private function checkRateLimit(string $to): void
+    {
+       
+        if (!$this->cache) {
+            return;
+        }
+
+        $key = self::RATE_LIMIT_KEY . $to;
+        $requests = $this->cache->get($key, 0);
+        
+        if ($requests >= self::MAX_REQUESTS_PER_MINUTE) {
+            throw RateLimitException::limitExceeded($to);
+        }
+
+        // increment request count
+        $this->cache->put($key, $requests + 1, self::RATE_LIMIT_WINDOW);
+    }
+
+    /**
+     * validate phone number format
+     *
+     * @param string $number
+     * @throws ValidationException
+     */
+    private function validatePhoneNumber(string $number): void
+    {
+        if (!preg_match('/^\+[1-9]\d{1,14}$/', $number)) {
+            throw ValidationException::invalidPhoneNumber($number);
+        }
     }
 
     /**
@@ -54,46 +99,13 @@ class WhatsApp
             }
         }
 
-        // validate phone number format
         if (!preg_match('/^\+[1-9]\d{1,14}$/', $config['from_number'])) {
             throw ValidationException::invalidPhoneNumber($config['from_number']);
         }
     }
 
     /**
-     * check rate limits before sending message
-     *
-     * @param string $to
-     * @throws RateLimitException
-     */
-    private function checkRateLimit(string $to): void
-    {
-        $key = self::RATE_LIMIT_KEY . $to;
-        $requests = $this->cache->get($key, 0);
-        
-        if ($requests >= self::MAX_REQUESTS_PER_MINUTE) {
-            throw RateLimitException::limitExceeded($to);
-        }
-
-        
-        $this->cache->put($key, $requests + 1, Carbon::now()->addSeconds(self::RATE_LIMIT_WINDOW));
-    }
-
-    /**
-     * validate phone number format
-     *
-     * @param string $number
-     * @throws ValidationException
-     */
-    private function validatePhoneNumber(string $number): void
-    {
-        if (!preg_match('/^\+[1-9]\d{1,14}$/', $number)) {
-            throw ValidationException::invalidPhoneNumber($number);
-        }
-    }
-
-    /**
-     * send a WhatsApp message
+     * send whatsApp message
      *
      * @param string $to
      * @param string $message
@@ -104,10 +116,7 @@ class WhatsApp
      */
     public function sendMessage($to, $message, $contentSid = null, $contentVariables = null)
     {
-        // validate phone number
         $this->validatePhoneNumber($to);
-
-        // check rate limits
         $this->checkRateLimit($to);
 
         try {
@@ -135,15 +144,14 @@ class WhatsApp
                 $messageParams
             );
         } catch (RestException $e) {
-            // map Twilio error codes toexceptions
             switch ($e->getCode()) {
-                case 20429: 
+                case 20429:
                     throw RateLimitException::twilioLimitExceeded();
-                case 20003: 
+                case 20003:
                     throw ConnectionException::authenticationFailed();
                 case 20404:
                     throw ConnectionException::resourceNotFound($e->getMessage());
-                case 20001: 
+                case 20001:
                     throw ValidationException::invalidParameters($e->getMessage());
                 default:
                     throw ConnectionException::generalError($e->getMessage(), $e->getCode());
@@ -160,7 +168,7 @@ class WhatsApp
      * @return bool
      * @throws ValidationException
      */
-    public function validateWebhookSignature($signature, $url, $params)
+    public function validateWebhookSignature($signature, $url, $params) 
     {
         if (empty($signature)) {
             throw ValidationException::missingSignature();
@@ -180,7 +188,7 @@ class WhatsApp
     }
 
     /**
-     * incoming webhook
+     * handle incoming webhook
      *
      * @param array $requestData
      * @param string $url
@@ -194,10 +202,8 @@ class WhatsApp
             throw ValidationException::missingMessageSid();
         }
 
-        
         $this->validateWebhookSignature($signature, $url, $requestData);
 
-    
         return [
             'MessageSid' => $requestData['MessageSid'],
             'From' => $requestData['From'] ?? null,
@@ -205,7 +211,7 @@ class WhatsApp
             'Body' => $requestData['Body'] ?? null,
             'Status' => $requestData['Status'] ?? null,
             'MediaUrls' => $this->extractMediaUrls($requestData),
-            'Timestamp' => $requestData['Timestamp'] ?? now()->toIso8601String(),
+            'Timestamp' => $requestData['Timestamp'] ?? null,
             'ErrorCode' => $requestData['ErrorCode'] ?? null,
             'ErrorMessage' => $requestData['ErrorMessage'] ?? null,
         ];
