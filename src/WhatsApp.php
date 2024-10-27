@@ -7,19 +7,26 @@ use Twilio\Security\RequestValidator;
 use Chat\WhatsappIntegration\Exceptions\WhatsAppException;
 use Twilio\Exceptions\RestException;
 
-class WhatsApp
+class WhatsApp 
 {
     protected $client;
     protected $config;
     protected $validator;
     
-    public function __construct(array $config, Client $client = null)
+    public function __construct(array $config, Client $client = null, RequestValidator $validator = null)
     {
         $this->config = $config;
         $this->client = $client ?? new Client($config['account_sid'], $config['auth_token']);
-        $this->validator = new RequestValidator($config['auth_token']);
+        $this->validator = $validator ?? new RequestValidator($config['auth_token']);
     }
-    
+
+    // method to set validator-testing
+    public function setValidator(RequestValidator $validator)
+    {
+        $this->validator = $validator;
+        return $this;
+    }
+
     public function sendMessage($to, $message, $contentSid = null, $contentVariables = null)
     {
         try {
@@ -45,24 +52,21 @@ class WhatsApp
         }
     }
 
-    public function validateWebhookSignature($signature, $url, $params)
-{
-    $isValid = $this->validator->validate($signature, $url, $params);
-    
-    if (!$isValid) {
-        throw new WhatsAppException('Invalid Twilio webhook signature.');
+    public function validateWebhookSignature($signature, $url, $params) 
+    {
+        $isValid = $this->validator->validate($signature, $url, $params);
+        
+        if (!$isValid) {
+            throw new WhatsAppException('Invalid Twilio webhook signature.');
+        }
+
+        return true;
     }
-
-    return true; 
-}
-
 
     public function handleWebhook(array $requestData, string $url, string $signature)
     {
         // validate webhook signature
-        if (!$this->validateWebhookSignature($signature, $url, $requestData)) {
-            throw new WhatsAppException('Invalid Twilio webhook signature.');
-        }
+        $this->validateWebhookSignature($signature, $url, $requestData);
 
         // process incoming message
         return [
@@ -79,11 +83,11 @@ class WhatsApp
     {
         $mediaUrls = [];
         $numMedia = (int) ($data['NumMedia'] ?? 0);
-
+        
         for ($i = 0; $i < $numMedia; $i++) {
             $mediaUrls[] = $data["MediaUrl$i"] ?? null;
         }
-
+        
         return array_filter($mediaUrls);
     }
 }
