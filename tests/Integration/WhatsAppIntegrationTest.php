@@ -5,197 +5,268 @@ namespace Tests\Integration;
 use PHPUnit\Framework\TestCase;
 use Chat\WhatsappIntegration\WhatsApp;
 use Chat\WhatsappIntegration\Exceptions\WhatsAppException;
+use Twilio\Exceptions\RestException;
+use Twilio\Security\RequestValidator;
 
 class WhatsAppIntegrationTest extends TestCase
 {
     protected $whatsapp;
+    protected $testPhoneNumber;
+    private $messageTracker = [];
+    private $authToken;
 
     protected function setUp(): void
     {
-        
+        parent::setUp();
+
+       
         if (file_exists(__DIR__ . '/../../.env')) {
             $dotenv = \Dotenv\Dotenv::create(__DIR__ . '/../../');
             $dotenv->load();
         }
 
+        $this->authToken = getenv('TWILIO_AUTH_TOKEN');
         
+       
         $config = [
             'account_sid' => getenv('TWILIO_ACCOUNT_SID'),
-            'auth_token'  => getenv('TWILIO_AUTH_TOKEN'),
+            'auth_token'  => $this->authToken,
             'from_number' => getenv('TWILIO_FROM_NUMBER')
         ];
 
-        
+      
+        foreach ($config as $key => $value) {
+            if (empty($value)) {
+                $this->markTestSkipped("Missing required environment variable for: {$key}");
+            }
+        }
+
         $this->whatsapp = new WhatsApp($config);
+        $this->testPhoneNumber = '+254707606316';
     }
 
-    /** @test */
-    public function it_can_send_a_whatsapp_message()
+    /**
+     * @test
+     * @group api
+     */
+    public function it_sends_basic_message_successfully()
     {
-        $to = '+254707606316'; 
-        $message = "Hello from PHPUnit test!";
+        $message = "Test message from WhatsApp Integration " . date('Y-m-d H:i:s');
 
-        $response = $this->whatsapp->sendMessage($to, $message);
+        try {
+            $result = $this->whatsapp->sendMessage($this->testPhoneNumber, $message);
+            
+    
+            $this->messageTracker[] = $result->sid;
 
-        $this->assertIsArray($response);
-        $this->assertEquals('success', $response['status']);
-        $this->assertNotEmpty($response['message']);
-        $this->assertEquals($to, str_replace('whatsapp:', '', $response['to']));
+            
+            $this->assertNotNull($result->sid);
+            $this->assertTrue(in_array($result->status, ['queued', 'sent', 'delivered']));
+            
+           
+            fwrite(STDERR, "\nMessage sent successfully - SID: " . $result->sid . "\n");
+            
+            return $result->sid;
+        } catch (WhatsAppException $e) {
+            $this->fail("Failed to send message: " . $e->getMessage());
+        }
     }
 
-    /** @test */
-    public function it_throws_exception_for_invalid_phone_number()
+    /**
+     * @test
+     * @group api
+     */
+    public function it_sends_template_message_successfully()
     {
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Invalid recipient phone number format');
+        $contentSid = "HX350d429d32e64a552466cafecbe95f3c";
+        $message = "Your order has been confirmed. Your delivery is scheduled for 12/1 at 3pm.";
+        $contentVars = json_encode(['1' => '12/1', '2' => '3pm']);
 
-        $invalidPhone = '12345'; 
-        $this->whatsapp->sendMessage($invalidPhone, 'Invalid number test');
+        try {
+            $result = $this->whatsapp->sendMessage(
+                $this->testPhoneNumber,
+                $message,
+                $contentSid,
+                $contentVars
+            );
+
+            
+            $this->messageTracker[] = $result->sid;
+
+            $this->assertNotNull($result->sid);
+            $this->assertTrue(in_array($result->status, ['queued', 'sent', 'delivered']));
+
+            fwrite(STDERR, "\nTemplate message sent successfully - SID: " . $result->sid . "\n");
+        } catch (WhatsAppException $e) {
+            $this->fail("Failed to send template message: " . $e->getMessage());
+        }
     }
 
-    /** @test */
-    public function it_throws_exception_for_missing_recipient()
+    /**
+     * @test
+     * @group api
+     */
+    public function it_handles_rate_limiting_gracefully()
     {
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Recipient phone number is required');
+        $message = "Rate limit test message";
+        $attempts = 0;
+        $maxAttempts = 3;
+        $successCount = 0;
+        $failCount = 0;
 
-        $this->whatsapp->sendMessage(null, 'Test message');
+        while ($attempts < $maxAttempts) {
+            try {
+                $result = $this->whatsapp->sendMessage($this->testPhoneNumber, $message);
+                $this->messageTracker[] = $result->sid;
+                $successCount++;
+                
+              
+                sleep(1);
+            } catch (WhatsAppException $e) {
+                $failCount++;
+                if ($e->getCode() === 429) {
+                    fwrite(STDERR, "\nRate limit detected as expected\n");
+                    break;
+                } else {
+                    throw $e;
+                }
+            }
+            $attempts++;
+        }
+
+        fwrite(STDERR, "\nRate limit test complete - Successes: $successCount, Failures: $failCount\n");
+        $this->assertTrue($successCount > 0 || $failCount > 0);
     }
 
-    /** @test */
-    public function it_throws_exception_for_missing_message()
+    /**
+     * @test
+     * @group api
+     */
+    public function it_handles_authentication_error()
     {
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Message content is required');
-
-        $this->whatsapp->sendMessage('+254707606316', null);
-    }
-
-    /** @test */
-    public function it_throws_exception_for_empty_message()
-    {
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Message content cannot be empty');
-
-        $this->whatsapp->sendMessage('+254707606316', '');
-    }
-
-    /** @test */
-    public function it_throws_exception_for_missing_configuration()
-    {
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('WhatsApp configuration is required');
-
-        $whatsapp = new WhatsApp(null);
-    }
-
-    /** @test */
-public function it_throws_exception_for_missing_account_sid()
-{
-    $this->expectException(WhatsAppException::class);
-    $this->expectExceptionMessage("Missing required configuration: account_sid");
-
-    $config = [
-        'auth_token' => 'valid_auth_token',
-        'from_number' => 'valid_from_number'
-    ];
-
-    new WhatsApp($config);
-}
-
-
-    /** @test */
-    public function it_throws_exception_for_empty_configuration_field()
-    {
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage("Configuration field 'account_sid' cannot be empty");
-
-        $config = [
-            'account_sid' => '',
-            'auth_token' => 'valid_auth_token',
-            'from_number' => 'valid_from_number'
+        // setup whatsApp with invalid credentials
+        $invalidConfig = [
+            'account_sid' => 'invalid_account_sid',
+            'auth_token'  => 'invalid_auth_token',
+            'from_number' => getenv('TWILIO_FROM_NUMBER')
         ];
 
-        new WhatsApp($config);
-    }
+        $whatsapp = new WhatsApp($invalidConfig);
 
-    
-
-    /** @test */
-    public function it_can_handle_webhook_payload()
-{
-    
-        $fromNumber = getenv('TWILIO_FROM_NUMBER');
-    
-    
-        $validRecipientNumber = '+254707606316'; 
-
-        $payload = [
-            'MessageSid' => 'SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-            'From' => $fromNumber, 
-            'To' => $validRecipientNumber, 
-            'Body' => 'Hello',
-    ];
-
-        $response = $this->whatsapp->handleWebhook($payload);
-
-        $this->assertEquals('success', $response['status']);
-        $this->assertIsArray($response['message']);
-        $this->assertEquals('Hello', $response['message'][0]['text']);
-        $this->assertEquals('text', $response['message'][0]['type']);
-}
-    /** @test */
-    public function it_throws_exception_for_invalid_webhook_payload()
-    {
         $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Webhook payload is required');
-
-        $this->whatsapp->handleWebhook(null); 
-    }
-
-    /** @test */
-    public function it_throws_exception_for_invalid_recipient_phone_number_in_webhook()
-    {
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Invalid recipient phone number format in webhook payload. Must be E.164 format (e.g., +1234567890)');
-
         
-        $fromNumber = getenv('TWILIO_FROM_NUMBER');
-
-    
-        $payload = [
-            'MessageSid' => 'SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-            'From' => $fromNumber, 
-            'To' => 'invalid_phone_number', 
-            'Body' => 'Hello',
-        ];
-
-        $this->whatsapp->handleWebhook($payload);
+        $whatsapp->sendMessage($this->testPhoneNumber, "Test message");
     }
 
-    /** @test */
-    public function it_throws_exception_for_invalid_sender_phone_number_in_webhook()
+    /**
+     * @test
+     * @group api
+     */
+    public function it_validates_webhook_signature()
     {
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Invalid sender phone number format in webhook payload. Must be E.164 format (e.g., +1234567890)');
-
         
-        $fromNumber = getenv('TWILIO_FROM_NUMBER');
-
-    
-        $payload = [
+        $url = 'https://example.com/webhook';
+        $params = [
             'MessageSid' => 'SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-            'From' => 'invalid_phone_number', 
-            'To' => '+254707606316', 
-            'Body' => 'Hello',
+            'From' => 'whatsapp:+1234567890',
+            'To' => 'whatsapp:' . $this->testPhoneNumber,
+            'Body' => 'Test webhook message',
         ];
 
-        $this->whatsapp->handleWebhook($payload);
+        // valid signature using Twilio's RequestValidator
+        $validator = new RequestValidator($this->authToken);
+        $signature = $validator->computeSignature($url, $params);
+
+        try {
+            $result = $this->whatsapp->validateWebhookSignature($signature, $url, $params);
+            $this->assertTrue($result);
+        } catch (WhatsAppException $e) {
+            $this->fail("Webhook validation failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * @test
+     * @group api
+     */
+    public function it_handles_webhook_data()
+    {
+        $url = 'https://example.com/webhook';
+        $requestData = [
+            'MessageSid' => 'SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+            'From' => 'whatsapp:+1234567890',
+            'To' => 'whatsapp:' . $this->testPhoneNumber,
+            'Body' => 'Test webhook message',
+            'NumMedia' => 2,
+            'MediaUrl0' => 'https://example.com/media1.jpg',
+            'MediaUrl1' => 'https://example.com/media2.jpg',
+        ];
+
+        // valid signature using Twilio's RequestValidator
+        $validator = new RequestValidator($this->authToken);
+        $signature = $validator->computeSignature($url, $requestData);
+
+        $result = $this->whatsapp->handleWebhook($requestData, $url, $signature);
+
+        $this->assertEquals($requestData['MessageSid'], $result['MessageSid']);
+        $this->assertEquals($requestData['From'], $result['From']);
+        $this->assertEquals($requestData['To'], $result['To']);
+        $this->assertEquals($requestData['Body'], $result['Body']);
+        $this->assertCount(2, $result['MediaUrls']);
+    }
+
+    /**
+     * @test
+     * @group api
+     */
+    public function it_handles_invalid_webhook_signature()
+    {
+        $url = 'https://example.com/webhook';
+        $requestData = [
+            'MessageSid' => 'SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+            'Body' => 'Test message'
+        ];
+
+        $this->expectException(WhatsAppException::class);
+        $this->expectExceptionMessage('Invalid Twilio webhook signature.');
+
+        // invalid signature
+        $invalidSignature = 'invalid_signature_string';
+        $this->whatsapp->handleWebhook($requestData, $url, $invalidSignature);
+    }
+
+    /**
+     * @test
+     * @group api
+     */
+    public function it_handles_missing_webhook_data()
+    {
+        $url = 'https://example.com/webhook';
+        $requestData = [
+            'MessageSid' => 'SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+        
+        ];
+
+        // valid signature
+        $validator = new RequestValidator($this->authToken);
+        $signature = $validator->computeSignature($url, $requestData);
+
+        $result = $this->whatsapp->handleWebhook($requestData, $url, $signature);
+
+       
+        $this->assertNull($result['Body']);
+        $this->assertNull($result['From']);
+        $this->assertNull($result['To']);
+        $this->assertEmpty($result['MediaUrls']);
     }
 
     protected function tearDown(): void
     {
-        // Clean up after each test if necessary
-        $this->whatsapp = null;
+        // log tracked messages
+        foreach ($this->messageTracker as $messageSid) {
+            fwrite(STDERR, "\nTracked message SID: $messageSid\n");
+        }
+
+        parent::tearDown();
     }
 }

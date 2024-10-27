@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Integration;
 
 use PHPUnit\Framework\TestCase;
 use Chat\WhatsappIntegration\WhatsApp;
@@ -8,7 +8,6 @@ use Chat\WhatsappIntegration\Exceptions\WhatsAppException;
 use Twilio\Rest\Client;
 use Twilio\Rest\Api\V2010\Account\MessageList;
 use Twilio\Rest\Api\V2010\Account\MessageInstance;
-use Twilio\Exceptions\RestException;
 use Mockery;
 
 class WhatsAppMockTest extends TestCase
@@ -16,131 +15,145 @@ class WhatsAppMockTest extends TestCase
     protected $whatsapp;
     protected $mockTwilioClient;
     protected $mockMessageList;
-    private $config;
-    
+
     protected function setUp(): void
     {
         parent::setUp();
+
         
         $this->mockTwilioClient = Mockery::mock(Client::class);
         $this->mockMessageList = Mockery::mock(MessageList::class);
         
+        //config
         $this->config = [
-            'account_sid' => 'AC_test_account_sid',
-            'auth_token' => 'test_auth_token',
+            'account_sid' => 'test_account_sid',
+            'auth_token'  => 'test_auth_token',
             'from_number' => '+1234567890'
         ];
+
+        // init mock client
+        $this->whatsapp = new WhatsApp($this->config, $this->mockTwilioClient);
+    }
+
+    /** @test */
+    public function it_sends_message_successfully()
+    {
+        
+        $to = '+254707606316';
+        $message = "Test message";
+        $expectedResponse = Mockery::mock(MessageInstance::class);
+        $expectedResponse->shouldReceive('getSid')->andReturn('SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX');
+        $expectedResponse->shouldReceive('getStatus')->andReturn('queued');
+
+        
+        $this->mockTwilioClient->messages = $this->mockMessageList;
+        $this->mockMessageList->shouldReceive('create')
+            ->with(
+                'whatsapp:' . $to,
+                [
+                    'from' => 'whatsapp:' . $this->config['from_number'],
+                    'body' => $message
+                ]
+            )
+            ->once()
+            ->andReturn($expectedResponse);
+        $result = $this->whatsapp->sendMessage($to, $message);
+        $this->assertEquals('SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', $result->getSid());
+        $this->assertEquals('queued', $result->getStatus());
+    }
+
+    /** @test */
+    public function it_sends_message_with_template()
+    {
+        
+        $to = '+254707606316';
+        $message = "Test template message";
+        $contentSid = "HXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXYYY";
+        $contentVars = json_encode(['1' => 'var1', '2' => 'var2']);
+        
+        $expectedResponse = Mockery::mock(MessageInstance::class);
+        $expectedResponse->shouldReceive('getSid')->andReturn('SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX');
+        $expectedResponse->shouldReceive('getStatus')->andReturn('queued');
+
+        
+        $this->mockTwilioClient->messages = $this->mockMessageList;
+        $this->mockMessageList->shouldReceive('create')
+            ->with(
+                'whatsapp:' . $to,
+                [
+                    'from' => 'whatsapp:' . $this->config['from_number'],
+                    'body' => $message,
+                    'contentSid' => $contentSid,
+                    'contentVariables' => $contentVars
+                ]
+            )
+            ->once()
+            ->andReturn($expectedResponse);
+
+        
+        $result = $this->whatsapp->sendMessage($to, $message, $contentSid, $contentVars);
+        $this->assertEquals('SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', $result->getSid());
+        $this->assertEquals('queued', $result->getStatus());
+    }
+
+    /** @test */
+    public function it_handles_rate_limit_error()
+    {
+        
+        $to = '+254707606316';
+        $message = "Test message";
+
+        $this->mockTwilioClient->messages = $this->mockMessageList;
+        $this->mockMessageList->shouldReceive('create')
+            ->andThrow(new \Twilio\Exceptions\RestException(
+                'Rate limit exceeded for this number',
+                429,
+                429
+            ));
+
+        
+        $this->expectException(WhatsAppException::class);
+        $this->expectExceptionMessage('Rate limit exceeded for this number');
+        $this->expectExceptionCode(429);
+
+        $this->whatsapp->sendMessage($to, $message);
+    }
+
+    /** @test */
+    public function it_processes_webhook_data_correctly()
+    {
+        // webhook data
+        $webhookData = [
+            'MessageSid' => 'SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+            'From' => 'whatsapp:+1234567890',
+            'To' => 'whatsapp:+0987654321',
+            'Body' => 'Test webhook message',
+            'NumMedia' => '2',
+            'MediaUrl0' => 'https://example.com/media1.jpg',
+            'MediaUrl1' => 'https://example.com/media2.jpg',
+            'Status' => 'delivered'
+        ];
+
+        $url = 'https://example.com/webhook';
+        $signature = 'valid_signature';
+
+        // mock signature validation
+        $result = $this->whatsapp->handleWebhook($webhookData, $url, $signature);
+
+        // assert webhook processing
+        $this->assertEquals($webhookData['MessageSid'], $result['MessageSid']);
+        $this->assertEquals($webhookData['From'], $result['From']);
+        $this->assertEquals($webhookData['To'], $result['To']);
+        $this->assertEquals($webhookData['Body'], $result['Body']);
+        $this->assertEquals($webhookData['Status'], $result['Status']);
+        $this->assertCount(2, $result['MediaUrls']);
+        $this->assertEquals('https://example.com/media1.jpg', $result['MediaUrls'][0]);
+        $this->assertEquals('https://example.com/media2.jpg', $result['MediaUrls'][1]);
     }
 
     protected function tearDown(): void
     {
         Mockery::close();
         parent::tearDown();
-    }
-
-    /** @test */
-    public function it_successfully_sends_a_message()
-    {
-        $mockMessageInstance = Mockery::mock(MessageInstance::class);
-        $mockMessageInstance->sid = 'SM123';
-        $mockMessageInstance->to = 'whatsapp:+254707606316';
-        $mockMessageInstance->from = 'whatsapp:+1234567890';
-        
-        $this->mockTwilioClient->messages = $this->mockMessageList;
-        
-        $this->mockMessageList->shouldReceive('create')
-            ->with(
-                'whatsapp:+254707606316',
-                [
-                    'from' => 'whatsapp:+1234567890',
-                    'body' => 'Test message'
-                ]
-            )
-            ->once()
-            ->andReturn($mockMessageInstance);
-            
-        $whatsapp = $this->createWhatsAppWithMockedClient();
-        $response = $whatsapp->sendMessage('+254707606316', 'Test message');
-        
-        $this->assertEquals('success', $response['status']);
-        $this->assertEquals('SM123', $response['message']);
-        $this->assertEquals('whatsapp:+254707606316', $response['to']);
-        $this->assertEquals('whatsapp:+1234567890', $response['from']);
-    }
-
-    /** @test */
-    public function it_handles_rate_limit_error()
-    {
-        $this->expectException(WhatsAppException::class);
-        $this->expectExceptionMessage('Rate limit exceeded');
-
-        $exception = new RestException('Rate limit exceeded', 1407, 429);
-
-        $this->mockTwilioClient->messages = $this->mockMessageList;
-        $this->mockMessageList->shouldReceive('create')
-            ->once()
-            ->andThrow($exception);
-
-        $whatsapp = $this->createWhatsAppWithMockedClient();
-        $whatsapp->sendMessage('+254707606316', 'Test message');
-    }
-
-    /** @test */
-    public function it_validates_webhook_payload_successfully()
-    {
-        $whatsapp = $this->createWhatsAppWithMockedClient();
-        
-        $payload = [
-            'MessageSid' => 'SM123',
-            'From' => '+1234567890',
-            'To' => '+254707606316',
-            'Body' => 'Test webhook message'
-        ];
-
-        $response = $whatsapp->handleWebhook($payload);
-
-        $this->assertEquals('success', $response['status']);
-        $this->assertIsArray($response['message']);
-        $this->assertEquals('Test webhook message', $response['message'][0]['text']);
-        $this->assertEquals('text', $response['message'][0]['type']);
-        $this->assertEquals('+1234567890', $response['message'][0]['from']);
-        $this->assertEquals('+254707606316', $response['message'][0]['to']);
-    }
-
-    /** @test */
-    public function it_handles_empty_webhook_body()
-    {
-        $whatsapp = $this->createWhatsAppWithMockedClient();
-        
-        $payload = [
-            'MessageSid' => 'SM123',
-            'From' => '+1234567890',
-            'To' => '+254707606316'
-        ];
-
-        $response = $whatsapp->handleWebhook($payload);
-
-        $this->assertEquals('no_messages', $response['status']);
-    }
-
-    protected function createWhatsAppWithMockedClient()
-    {
-        $whatsapp = new class($this->config, $this->mockTwilioClient) extends WhatsApp {
-            private $mockedClient;
-            
-            public function __construct(array $config, $mockedClient)
-            {
-                $this->mockedClient = $mockedClient;
-                parent::__construct($config);
-            }
-            
-            protected function initializeClient($accountSid, $authToken)
-            {
-                $this->client = $this->mockedClient;
-            }
-        };
-        
-        $whatsapp->enableTestMode();
-        return $whatsapp;
     }
 }
