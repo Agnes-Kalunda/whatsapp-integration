@@ -269,15 +269,9 @@ vendor/bin/phpunit tests/Unit/WhatsAppMockTest.php
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
 
-## Security
-
-If you discover any security-related issues, please email agypeter97@gmail.com instead of using the issue tracker.
 
 ## Credits
 
-- [Agnes](mailto:agypeter97@gmail.com)
+- Agnes
 - [Twilio SDK](https://github.com/twilio/twilio-php)
 
-## Support
-
-For support, please email agypeter97@gmail.com.

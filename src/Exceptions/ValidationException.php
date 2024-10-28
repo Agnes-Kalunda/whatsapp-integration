@@ -48,4 +48,78 @@ class ValidationException extends WhatsAppException
     {
         return new self("Invalid parameters: {$message}", 1009);
     }
+
+    /**
+     * Create a new exception for missing template variable
+     *
+     * @param string $key
+     * @param string $templateName
+     * @return self
+     */
+    public static function missingTemplateVariable(string $key, string $templateName): self
+    {
+        return new self(
+            "Missing required template variable '{$key}' for template '{$templateName}'",
+            1010
+        );
+    }
+
+    /**
+     * Create a new exception for invalid template variable type
+     *
+     * @param string $key
+     * @param string $templateName
+     * @param string $expectedType
+     * @return self
+     */
+    public static function invalidTemplateVariableType(string $key, string $templateName, string $expectedType): self
+    {
+        return new self(
+            "Invalid type for template variable '{$key}' in template '{$templateName}'. Expected {$expectedType}",
+            1011
+        );
+    }
+
+    /**
+     * Create a new exception for template not found
+     *
+     * @param string $templateName
+     * @return self
+     */
+    public static function templateNotFound(string $templateName): self
+    {
+        return new self(
+            "Template not found: {$templateName}",
+            1012
+        );
+    }
+
+    /**
+     * Create a new exception for invalid template format
+     *
+     * @param string $templateName
+     * @return self
+     */
+    public static function invalidTemplateFormat(string $templateName): self
+    {
+        return new self(
+            "Invalid template format for template '{$templateName}'. Missing required fields",
+            1013
+        );
+    }
+
+    /**
+     * Create a new exception for invalid template component
+     *
+     * @param string $component
+     * @param string $templateName
+     * @return self
+     */
+    public static function invalidTemplateComponent(string $component, string $templateName): self
+    {
+        return new self(
+            "Invalid template component '{$component}' in template '{$templateName}'",
+            1014
+        );
+    }
 }

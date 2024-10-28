@@ -10,7 +10,7 @@ use Chat\WhatsappIntegration\Exceptions\RateLimitException;
 use Chat\WhatsappIntegration\Exceptions\ConnectionException;
 use Twilio\Exceptions\RestException;
 use Illuminate\Contracts\Cache\Repository as Cache;
-
+use Chat\WhatsappIntegration\Helpers\TemplateHelper;
 class WhatsApp 
 {
     protected $client;
@@ -216,6 +216,27 @@ class WhatsApp
             'ErrorMessage' => $requestData['ErrorMessage'] ?? null,
         ];
     }
+
+
+    public function sendTemplateMessage(string $to, string $templateName, array $variables)
+{
+        $template = TemplateHelper::getTemplate($templateName);
+    
+        if (!$template) {
+            throw ValidationException::templateNotFound($templateName);
+    }
+
+        TemplateHelper::validateTemplateVariables($template, $variables);
+    
+        $message = TemplateHelper::buildTemplateMessage($template, $variables);
+    
+        return $this->sendMessage(
+            $to,
+            $message,
+            $template['sid'],
+            json_encode($variables)
+    );
+}
 
     /**
      * xxtract media URLs from webhook dta
