@@ -8,33 +8,30 @@ return [
 
     //templates
     'templates' => [
+        'verification_code' => [
+            'sid' => 'HX229f5a04fd0510ce1b071852155d3e75',
+            'name' => 'verification_code',
+            'language' => 'en',
+            'content' => '{{1}} is your verification code. For your security, do not share this code.',
+            'components' => ['1' => 'code']
+        ],
+        'appointment_reminder' => [
+            'sid' => 'HXb5b62575e6e4ff6129ad7c8efe1f983e',
+            'name' => 'appointment_reminder',
+            'content' => 'Your appointment is coming up on {{1}} at {{2}}',
+            'components' => [
+                '1' => 'date',
+                '2' => 'time'
+            ]
+        ],
         'order_confirmation' => [
             'sid' => 'HX350d429d32e64a552466cafecbe95f3c',
             'name' => 'order_confirmation',
-            'language' => 'en',
-            'content' => 'Your order has been confirmed. Your delivery is scheduled for {{1}} at {{2}}.',
-            'components' => ['1' => 'date', '2' => 'time']
-        ],
-        'delivery_update' => [
-            'sid' => 'HX123456789abcdef123456789abcdef12',
-            'name' => 'delivery_update',
-            'language' => 'en',
-            'content' => 'Your delivery status has been updated to {{1}}.',
-            'components' => ['1' => 'status']
-        ],
-        'payment_received' => [
-            'sid' => 'HX987654321abcdef123456789abcdef12',
-            'name' => 'payment_received',
-            'language' => 'en',
-            'content' => 'We have received your payment of {{1}}. Thank you!',
-            'components' => ['1' => 'amount']
-        ],
-        'appointment_reminder' => [
-            'sid' => 'HXabcdef123456789abcdef123456789ab',
-            'name' => 'appointment_reminder',
-            'language' => 'en',
-            'content' => 'Reminder: Your appointment is scheduled for {{1}} at {{2}}.',
-            'components' => ['1' => 'date', '2' => 'time']
+            'content' => 'Thank you for your order. Your delivery is scheduled for {{1}} at {{2}}. If you need to change it, please reply back and let us know.',
+            'components' => [
+                '1' => 'date',
+                '2' => 'time'
+        ]
         ]
     ],
     // rate limit
